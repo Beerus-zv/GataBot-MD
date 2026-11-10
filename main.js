@@ -336,7 +336,7 @@ return originalConsoleMethod.apply(console, arguments)
 ;['log', 'warn', 'error'].forEach((methodName) => redefineConsoleMethod(methodName, filterStrings))
 
 const connectionOptions = {
-logger: pino({level: 'silent'}),
+logger: pino({level: process.env.WA_LOG_LEVEL || 'silent'}),
 printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
 mobile: MethodMobile,
 browser: opcion == '1' ? ['GataBot-MD', 'Edge', '20.0.04'] : methodCodeQR ? ['GataBot-MD', 'Edge', '20.0.04'] : ['Ubuntu', 'Chrome', '20.0.04'],
@@ -360,12 +360,13 @@ msgRetryCounterCache: msgRetryCounterCache || new Map(),
 userDevicesCache: userDevicesCache || new Map(),
 defaultQueryTimeoutMs: undefined,
 cachedGroupMetadata: (jid) => global.conn?.chats?.[jid] ?? {},
-version: [2, 3000, 1033959288],
+version: version || [2, 3000, 1031793442],
 keepAliveIntervalMs: 55000,
 maxIdleTimeMs: 60000
 }
 
 global.conn = makeWASocket(connectionOptions)
+attachConnectionHandler(global.conn)
 
 if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
 if (opcion === '2' || methodCode) {
@@ -449,6 +450,17 @@ console.log('[♻️] Respaldo periódico realizado.')
 )
 
 let printingNoConn = false
+/**
+ * The QR/connection events start flowing the moment makeWASocket() returns,
+ * long before reloadHandler() finishes loading plugins. Binding the handler
+ * here means the first QR is not lost to the plugin scan.
+ */
+function attachConnectionHandler(target) {
+if (target.connectionUpdate) target.ev.off('connection.update', target.connectionUpdate)
+target.connectionUpdate = connectionUpdate.bind(target)
+target.ev.on('connection.update', target.connectionUpdate)
+}
+
 async function connectionUpdate(update) {
 const {connection, lastDisconnect, isNewLogin, qr} = update
 global.stopped = connection
@@ -472,7 +484,19 @@ global.timestamp.connect = new Date()
 
 if (global.db.data == null) loadDatabase()
 if ((qr != 0 && qr != undefined) || methodCodeQR) {
-if (opcion == '1' || methodCodeQR) console.log(chalk.bold.yellow(mid.mCodigoQR))
+if (opcion == '1' || methodCodeQR) {
+console.log(chalk.bold.yellow(mid.mCodigoQR))
+if (qr) {
+// baileys 7 dropped printQRInTerminal; render the payload ourselves.
+try {
+const qrMod = await import('qrcode-terminal')
+const qrcode = qrMod.default ?? qrMod
+qrcode.generate(qr, {small: true})
+} catch (e) {
+console.log(chalk.dim(`[qr] ${qr}`))
+}
+}
+}
 }
 
 if (connection == 'open') {
@@ -534,6 +558,7 @@ global.conn.ws.close()
 } catch {}
 conn.ev.removeAllListeners?.()
 global.conn = makeWASocket(connectionOptions, {chats: oldChats})
+attachConnectionHandler(global.conn)
 isInit = true
 }
 if (!isInit) {
@@ -542,7 +567,6 @@ safeOff('group-participants.update', conn.participantsUpdate)
 safeOff('groups.update', conn.groupsUpdate)
 safeOff('message.delete', conn.onDelete)
 safeOff('call', conn.onCall)
-safeOff('connection.update', conn.connectionUpdate)
 safeOff('creds.update', conn.credsUpdate)
 }
 
@@ -560,14 +584,13 @@ conn.participantsUpdate = handler.participantsUpdate.bind(global.conn)
 conn.groupsUpdate = handler.groupsUpdate.bind(global.conn)
 conn.onDelete = handler.deleteUpdate.bind(global.conn)
 conn.onCall = handler.callUpdate.bind(global.conn)
-conn.connectionUpdate = connectionUpdate.bind(global.conn)
 conn.credsUpdate = saveCreds.bind(global.conn, true)
 safeOn('messages.upsert', conn.handler)
 safeOn('group-participants.update', conn.participantsUpdate)
 safeOn('groups.update', conn.groupsUpdate)
 safeOn('message.delete', conn.onDelete)
 safeOn('call', conn.onCall)
-safeOn('connection.update', conn.connectionUpdate)
+// connection.update is bound in attachConnectionHandler(), at socket creation.
 safeOn('creds.update', conn.credsUpdate)
 isInit = false
 return true
@@ -612,7 +635,7 @@ delete global.plugins[filename]
 }
 }
 filesInit()
-.then((_) => Object.keys(global.plugins))
+.then((_) => console.log(chalk.bold.cyanBright(`[plugins] ${Object.keys(global.plugins).length} cargados`)))
 .catch(console.error)
 
 global.reload = async (_ev, filename) => {

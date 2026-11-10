@@ -1,7 +1,10 @@
 import { dirname, join } from 'path'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
-import { fork, setupMaster } from 'cluster'
+import cluster from 'cluster'
+const { fork } = cluster
+// cluster.setupMaster was removed in Node 16; setupPrimary is the replacement.
+const setupMaster = cluster.setupPrimary ? cluster.setupPrimary.bind(cluster) : cluster.setupMaster.bind(cluster)
 import { unwatchFile, watchFile } from 'fs'
 import cfonts from 'cfonts'
 import { createInterface } from 'readline'
@@ -47,7 +50,7 @@ process.exit(1)
 async function start(file) {
 if (isRunning) return
 isRunning = true
-const currentFilePath = new URL(import.meta.url).pathname
+const currentFilePath = fileURLToPath(import.meta.url)
 let args = [join(__dirname, file), ...process.argv.slice(2)]
 say([process.argv[0], ...args].join(' '), {
 font: 'console',

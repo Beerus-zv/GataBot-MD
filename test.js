@@ -9,11 +9,14 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const require = createRequire(__dirname)
 let folders = ['.', ...Object.keys(require(path.join(__dirname, './package.json')).directories)]
+// koyeb.js holds a Dockerfile recipe, not JavaScript; syntax-checking it always throws.
+const notJavaScript = new Set([path.resolve(path.join(__dirname, 'koyeb.js'))])
 let files = []
 for (let folder of folders)
 for (let file of fs.readdirSync(folder).filter((v) => v.endsWith('.js'))) files.push(path.resolve(path.join(folder, file)))
 for (let file of files) {
 if (file == __filename) continue
+if (notJavaScript.has(file)) continue
 console.error('Checking', file)
 const error = syntaxError(fs.readFileSync(file, 'utf8'), file, {
 sourceType: 'module',
