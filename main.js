@@ -277,7 +277,28 @@ const backupFile = join(respaldoDir, global.creds)
 if (!fs.existsSync(global.rutaJadiBot)) fs.mkdirSync(global.rutaJadiBot)
 if (!fs.existsSync(respaldoDir)) fs.mkdirSync(respaldoDir)
 
-const {state, saveState, saveCreds} = await useMultiFileAuthState(global.authFile)
+/**
+ * A creds.json that exists but never finished pairing is worse than no creds at
+ * all: baileys signs the handshake with a device identity WhatsApp never
+ * confirmed, so the server answers 500 (badSession) then 401 (loggedOut) on an
+ * endless reconnect loop and no QR is ever issued. An interrupted `npm run code`
+ * is enough to leave one behind. Wipe only the unregistered case — a creds file
+ * that says registered:true is a real device and must survive, even when the
+ * server later rejects it.
+ */
+const credsSnapshot = (() => {
+try {
+return JSON.parse(readFileSync(credsFile, 'utf8'))
+} catch {
+return null
+}
+})()
+if (existsSync(credsFile) && credsSnapshot?.registered !== true) {
+rmSync(global.rutaBot, {recursive: true, force: true})
+console.log(chalk.bold.yellowBright('[⚠] Sesión sin registrar detectada en ' + global.authFile + '; se reinicia el emparejamiento.'))
+}
+
+const {state, saveState, saveCreds} = await useMultiFileAuthState(global.rutaBot)
 const msgRetryCounterMap = new Map()
 const msgRetryCounterCache = new NodeCache({stdTTL: 0, checkperiod: 0})
 const userDevicesCache = new NodeCache({stdTTL: 0, checkperiod: 0})
@@ -304,14 +325,14 @@ resolver(respuesta.trim())
 
 let opcion
 if (methodCodeQR) opcion = '1'
-if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.json`)) {
+if (!methodCodeQR && !methodCode && !fs.existsSync(credsFile)) {
 do {
 let lineM = '⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ 》'
 opcion = await question(
 `╭${lineM}  \n┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}\n┊ ${chalk.blueBright('┊')} ${chalk.blue.bgBlue.bold.cyan(mid.methodCode1)}\n┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}   \n┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     \n┊ ${chalk.blueBright('┊')} ${chalk.green.bgMagenta.bold.yellow(mid.methodCode2)}\n┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright(`⇢  ${mid.methodCode3} 1:`)} ${chalk.greenBright(mid.methodCode4)}\n┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright(`⇢  ${mid.methodCode3} 2:`)} ${chalk.greenBright(mid.methodCode5)}\n┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}\n┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     \n┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta(mid.methodCode6)}\n┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta(mid.methodCode7)}\n┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')} \n┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}    \n┊ ${chalk.blueBright('┊')} ${chalk.red.bgRed.bold.green(mid.methodCode8)}\n┊ ${chalk.blueBright('┊')} ${chalk.italic.cyan(mid.methodCode9)}\n┊ ${chalk.blueBright('┊')} ${chalk.italic.cyan(mid.methodCode10)}\n┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm run qr ${chalk.italic.magenta(`(${mid.methodCode12})`)}`)}\n┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm run code ${chalk.italic.magenta(`(${mid.methodCode13})`)}`)}\n┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm start ${chalk.italic.magenta(`(${mid.methodCode14})`)}`)}\n┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')} \n╰${lineM}\n${chalk.bold.magentaBright('---> ')}`
 )
 if (!/^[1-2]$/.test(opcion)) console.log(chalk.bold.redBright(mid.methodCode11(chalk)))
-} while ((opcion !== '1' && opcion !== '2') || fs.existsSync(`./${global.authFile}/creds.json`))
+} while ((opcion !== '1' && opcion !== '2') || fs.existsSync(credsFile))
 }
 
 const filterStrings = [
@@ -368,7 +389,7 @@ maxIdleTimeMs: 60000
 global.conn = makeWASocket(connectionOptions)
 attachConnectionHandler(global.conn)
 
-if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
+if (!fs.existsSync(credsFile)) {
 if (opcion === '2' || methodCode) {
 opcion = '2'
 if (!conn.authState.creds.registered) {
@@ -463,10 +484,14 @@ target.ev.on('connection.update', target.connectionUpdate)
 
 async function connectionUpdate(update) {
 const {connection, lastDisconnect, isNewLogin, qr} = update
+if (process.env.WA_DEBUG) {
+const reason = new Boom(lastDisconnect?.error)?.output?.statusCode
+console.error('[conn]', JSON.stringify({connection, qr: qr ? qr.length : 0, reason, name: lastDisconnect?.error?.name, message: lastDisconnect?.error?.message, cwd: process.cwd(), creds: existsSync(credsFile)}))
+}
 global.stopped = connection
 if (isNewLogin) conn.isInit = true
 
-if (connection === 'close' && !existsSync(`./${global.authFile}/creds.json`)) {
+if (connection === 'close' && !existsSync(credsFile)) {
 if (!printingNoConn) {
 printingNoConn = true
 await logCritical(chalk.bold.redBright('⚠️ SIN CONEXIÓN, BORRE LA CARPETA GataBotSession Y ESCANEA EL CÓDIGO QR ⚠️'))

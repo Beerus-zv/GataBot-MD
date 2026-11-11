@@ -17,7 +17,8 @@
     "qr": "node index.js qr",
     "code": "node index.js code",
     "test": "node test.js",
-    "test2": "nodemon index.js"
+    "test2": "nodemon index.js",
+    "verify": "node test.js && node tools/dep-audit.mjs && node tools/import-smoke.mjs"
   },
   "homepage": "https://github.com/GataNina-Li/GataBot-MD",
   "author": {
@@ -95,9 +96,17 @@
     "yt-search": "^2.10.3",
     "ytdl-core": "latest"
   },
+  "overrides": {
+    "cheerio": "1.0.0-rc.12"
+  },
   "devDependencies": {
     "eslint": "^8.45.0",
     "eslint-config-google": "^0.14.0",
     "prettier": "^3.6.2"
+  },
+  "allowScripts": {
+    "sharp@0.30.7": true,
+    "protobufjs@7.6.6": true,
+    "@whiskeysockets/baileys@7.0.0-rc14": true
   }
 }
