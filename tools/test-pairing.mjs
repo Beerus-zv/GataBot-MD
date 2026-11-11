@@ -69,11 +69,10 @@ setTimeout(async () => {
 
   const log = readLog();
   const gotCode = /\b[A-Z0-9]{4}-[A-Z0-9]{4}\b/.test(log);
-  const reachedRequest = /No se pudo pedir el c[oó]digo/.test(log);
-  const wiped = /Sesi[oó]n sin registrar/.test(log);
+  const reachedRequest = /Intento \d\/\d/.test(log) || /No se pudo pedir/.test(log);
 
   console.log(`[pairing-test] elapsed=${Date.now() - startedAt}ms childExit=${exitCode ?? 'alive'}`);
-  console.log(`[pairing-test] stale session wiped: ${wiped}`);
+  console.log(`[pairing-test] stale session wiped: ${/Sesi[oó]n sin registrar/.test(log)}`);
   console.log(`[pairing-test] prompt shown: ${sent}`);
   console.log(`[pairing-test] pairing code printed: ${gotCode}`);
   console.log(`[pairing-test] request attempted: ${reachedRequest}`);
@@ -83,12 +82,12 @@ setTimeout(async () => {
     console.error(log.split('\n').slice(-25).join('\n'));
     process.exit(1);
   }
-  if (!gotCode && !reachedRequest) {
-    console.error('[pairing-test] FAIL — the number never reached requestPairingCode');
+  if (!gotCode) {
+    console.error('[pairing-test] FAIL — no pairing code reached the console');
     console.error(log.split('\n').slice(-25).join('\n'));
     process.exit(1);
   }
-  console.log('[pairing-test] PASS — number crossed the IPC boundary');
+  console.log('[pairing-test] PASS — pairing code printed for the submitted number');
   rmSync(OUT_PATH, { force: true });
   process.exit(0);
 }, PROMPT_TIMEOUT_MS + AFTER_INPUT_MS);

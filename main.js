@@ -385,6 +385,50 @@ console.log(chalk.bold.redBright(`[⚠] Número inválido (${attempt}/3): usa so
 return null
 }
 
+/**
+ * requestPairingCode throws "Connection Closed" when the noise handshake has
+ * not finished yet — the socket object exists the instant makeWASocket returns,
+ * but its transport is not open. Wait for the transport, and retry if WhatsApp
+ * drops it mid-request (it does when a QR refresh races the pairing).
+ */
+const socketOpen = () => {
+const ws = global.conn?.ws
+if (!ws) return false
+if (typeof ws.isOpen === 'boolean') return ws.isOpen
+const state = ws.socket?.readyState ?? ws.readyState
+return state === 1
+}
+
+async function waitForSocket(timeoutMs = 25000) {
+const deadline = Date.now() + timeoutMs
+while (Date.now() < deadline) {
+if (socketOpen()) return true
+await new Promise((resolve) => setTimeout(resolve, 250))
+}
+return false
+}
+
+async function requestPairingWithRetry(number, attempts = 3) {
+for (let attempt = 1; attempt <= attempts; attempt++) {
+const ready = await waitForSocket()
+if (!ready) {
+console.log(chalk.bold.redBright(`[⚠] El socket no abrió (${attempt}/${attempts}).`))
+continue
+}
+try {
+let code = await global.conn.requestPairingCode(number)
+code = code?.match(/.{1,4}/g)?.join('-') || code
+console.log(chalk.bold.white(chalk.bgMagenta(mid.pairingCode)), chalk.bold.white(chalk.white(code)))
+return code
+} catch (error) {
+const message = error?.message ?? String(error)
+console.log(chalk.bold.yellowBright(`[⚠] Intento ${attempt}/${attempts}: ${message}`))
+await new Promise((resolve) => setTimeout(resolve, 1500))
+}
+}
+return null
+}
+
 let opcion
 if (methodCodeQR) opcion = '1'
 if (!methodCodeQR && !methodCode && !fs.existsSync(credsFile)) {
@@ -460,15 +504,10 @@ if (!addNumber) {
 console.log(chalk.bold.redBright('[⚠] Sin número no se puede generar el código de vinculación. Usa: npm run code -- +573001234567'))
 } else {
 if (rl) rl.close()
-setTimeout(async () => {
-try {
-let codeBot = await conn.requestPairingCode(addNumber)
-codeBot = codeBot?.match(/.{1,4}/g)?.join('-') || codeBot
-console.log(chalk.bold.white(chalk.bgMagenta(mid.pairingCode)), chalk.bold.white(chalk.white(codeBot)))
-} catch (error) {
-console.log(chalk.bold.redBright(`[⚠] No se pudo pedir el código: ${error?.message ?? error}`))
+const codeBot = await requestPairingWithRetry(addNumber)
+if (!codeBot) {
+console.log(chalk.bold.redBright('[⚠] WhatsApp cerró la conexión antes de entregar el código. Reintenta con: npm run code -- ' + `+${addNumber}`))
 }
-}, 2000)
 }
 }
 }
