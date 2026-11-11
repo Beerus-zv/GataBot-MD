@@ -41,9 +41,6 @@ import store from './lib/store.js'
 import readline from 'readline'
 import NodeCache from 'node-cache'
 import { gataJadiBot } from './plugins/jadibot-serbot.js'
-import pkg from 'google-libphonenumber'
-const {PhoneNumberUtil} = pkg
-const phoneUtil = PhoneNumberUtil.getInstance()
 const {
 makeInMemoryStore,
 DisconnectReason,
@@ -307,20 +304,85 @@ let phoneNumber = global.botNumberCode
 const methodCodeQR = process.argv.includes('qr')
 const methodCode = !!phoneNumber || process.argv.includes('code')
 const MethodMobile = process.argv.includes('mobile')
-let rl = readline.createInterface({
+const isClusterWorker = typeof process.send === 'function'
+const stdinLines = []
+let stdinWaiter = null
+if (isClusterWorker) {
+process.on('message', (data) => {
+if (typeof data !== 'string') return
+const line = data.trim()
+if (stdinWaiter) {
+const resolve = stdinWaiter
+stdinWaiter = null
+resolve(line)
+} else {
+stdinLines.push(line)
+}
+})
+}
+let rl = isClusterWorker
+? null
+: readline.createInterface({
 input: process.stdin,
 output: process.stdout,
 terminal: true
 })
 
 const question = (texto) => {
-rl.clearLine(rl.input, 0)
+/**
+ * Only one process may read a terminal. index.js (the cluster primary) owns
+ * stdin and forwards each line over IPC, so this worker must not open a second
+ * readline on the same fd — two readers split a paste between them and both end
+ * up with fragments, which is why pasting the number did nothing.
+ */
+if (!isClusterWorker) {
 return new Promise((resolver) => {
-rl.question(texto, (respuesta) => {
-rl.clearLine(rl.input, 0)
-resolver(respuesta.trim())
+rl.question(texto, (respuesta) => resolver(String(respuesta ?? '').trim()))
 })
+}
+
+process.stdout.write(texto)
+return new Promise((resolver) => {
+if (stdinLines.length) return resolver(stdinLines.shift())
+stdinWaiter = resolver
 })
+}
+
+/**
+ * Pairing-by-code needed a pasted number, and pasting into a readline listener
+ * that calls clearLine on every keystroke loses the buffer on Windows. Accept
+ * the number from four places instead, in order of how little the user has to
+ * do: --number, a bare positional argument, BOT_NUMBER, then config.js.
+ */
+const bootArgs = process.argv.slice(2)
+const pairingNumberArg = (() => {
+const inline = bootArgs.find((a) => /^--?number=/i.test(a))
+if (inline) return inline.split('=').slice(1).join('=')
+const flagIndex = bootArgs.findIndex((a) => /^--?(number|tel|phone)$/i.test(a))
+if (flagIndex !== -1 && bootArgs[flagIndex + 1]) return bootArgs[flagIndex + 1]
+return bootArgs.find((a) => !/^[-]{1,2}/.test(a) && !/^(qr|code|mobile|test|server)$/i.test(a) && /^\+?[\d\s().-]{8,}$/.test(a))
+})()
+
+const normalizeNumber = (value) => {
+let digits = String(value ?? '').replace(/\D/g, '')
+if (digits.startsWith('00')) digits = digits.slice(2)
+// Mexican mobiles report as +521...; WhatsApp wants +52 and drops the extra 1.
+if (digits.length === 13 && digits.startsWith('521')) digits = `52${digits.slice(3)}`
+return digits
+}
+
+const looksLikePhone = (digits) => digits.length >= 8 && digits.length <= 15
+
+async function resolvePairingNumber() {
+const preset = normalizeNumber(pairingNumberArg ?? process.env.BOT_NUMBER ?? global.botNumberCode)
+if (looksLikePhone(preset)) return preset
+
+for (let attempt = 1; attempt <= 3; attempt++) {
+const typed = normalizeNumber(await question(chalk.bgBlack(chalk.bold.greenBright(mid.phNumber2(chalk)))))
+if (looksLikePhone(typed)) return typed
+console.log(chalk.bold.redBright(`[⚠] Número inválido (${attempt}/3): usa solo dígitos, incluyendo el código de país.`))
+}
+return null
 }
 
 let opcion
@@ -393,21 +455,19 @@ if (!fs.existsSync(credsFile)) {
 if (opcion === '2' || methodCode) {
 opcion = '2'
 if (!conn.authState.creds.registered) {
-let addNumber
-if (!!phoneNumber) {
-addNumber = phoneNumber.replace(/[^0-9]/g, '')
+const addNumber = await resolvePairingNumber()
+if (!addNumber) {
+console.log(chalk.bold.redBright('[⚠] Sin número no se puede generar el código de vinculación. Usa: npm run code -- +573001234567'))
 } else {
-do {
-phoneNumber = await question(chalk.bgBlack(chalk.bold.greenBright(mid.phNumber2(chalk))))
-phoneNumber = phoneNumber.replace(/\D/g, '')
-if (!phoneNumber.startsWith('+')) phoneNumber = `+${phoneNumber}`
-} while (!(await isValidPhoneNumber(phoneNumber)))
-rl.close()
-addNumber = phoneNumber.replace(/\D/g, '')
+if (rl) rl.close()
 setTimeout(async () => {
+try {
 let codeBot = await conn.requestPairingCode(addNumber)
 codeBot = codeBot?.match(/.{1,4}/g)?.join('-') || codeBot
 console.log(chalk.bold.white(chalk.bgMagenta(mid.pairingCode)), chalk.bold.white(chalk.white(codeBot)))
+} catch (error) {
+console.log(chalk.bold.redBright(`[⚠] No se pudo pedir el código: ${error?.message ?? error}`))
+}
 }, 2000)
 }
 }
@@ -857,21 +917,6 @@ unwatchFile(file)
 console.log(chalk.bold.greenBright(lenguajeGB['smsMainBot']().trim()))
 import(`${file}?update=${Date.now()}`)
 })
-
-async function isValidPhoneNumber(number) {
-try {
-number = number.replace(/\s+/g, '')
-if (number.startsWith('+521')) {
-number = number.replace('+521', '+52')
-} else if (number.startsWith('+52') && number[4] === '1') {
-number = number.replace('+52 1', '+52')
-}
-const parsedNumber = phoneUtil.parseAndKeepRawInput(number)
-return phoneUtil.isValidNumber(parsedNumber)
-} catch (error) {
-return false
-}
-}
 
 async function joinChannels(conn) {
 for (const channelId of Object.values(global.ch)) {

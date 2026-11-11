@@ -125,7 +125,9 @@ let opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
 if (!opts['test'])
 if (!rl.listenerCount())
 rl.on('line', (line) => {
-p.emit('message', line.trim())
+// p.emit() fires on this process's own emitter and reaches nobody. The worker
+// only listens on its IPC channel, so interactive input has to be sent.
+if (typeof p?.send === 'function' && p.connected) p.send(line.trim())
 })
 }
 
