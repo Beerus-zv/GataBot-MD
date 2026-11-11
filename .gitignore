@@ -10,3 +10,6 @@ GataBotSession/
 GataJadiBot/
 BackupSession/
 database/
+
+# pairing cycle counter
+.pairing-attempts

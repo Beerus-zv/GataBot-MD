@@ -429,6 +429,61 @@ await new Promise((resolve) => setTimeout(resolve, 1500))
 return null
 }
 
+/**
+ * A pairing code lives about a minute. When it expires WhatsApp closes the
+ * socket with 428 and baileys has already written creds.json, so the next
+ * reconnect presents unconfirmed device keys and lands in the 401 loop — the
+ * same dead end as a poisoned session, except it happens while the user is
+ * still typing the code into their phone.
+ *
+ * The device keys are single-use, so the only way out is a brand new auth
+ * state. The worker asks the cluster primary for 'reset', which restarts it
+ * from scratch; main.js then wipes the unregistered session at boot and asks
+ * for a fresh code. The marker file caps the cycle so a wrong number does not
+ * spin forever.
+ */
+const PAIRING_MARKER = join(__dirname, '.pairing-attempts')
+const PAIRING_MAX_CYCLES = 10
+// WhatsApp invalidates a fresh code sooner when codes are requested back to
+// back; spacing the retries keeps each one usable for its full window.
+const PAIRING_COOLDOWN_MS = 15_000
+let pairingNumber = null
+let pairingRestarting = false
+
+const readPairingCycles = () => {
+try {
+const cycles = Number(readFileSync(PAIRING_MARKER, 'utf8'))
+return Number.isFinite(cycles) ? cycles : 0
+} catch {
+return 0
+}
+}
+
+const restartPairing = (reason) => {
+// A dying socket emits several close events; without this latch the cycle
+// counter jumps by three or four for one expiry and the user burns through the
+// allowance while typing a single code.
+if (pairingRestarting) return
+pairingRestarting = true
+
+const cycles = readPairingCycles() + 1
+try {
+writeFileSync(PAIRING_MARKER, String(cycles))
+} catch {}
+
+if (cycles >= PAIRING_MAX_CYCLES) {
+console.log(chalk.bold.redBright(`[⚠] ${cycles} códigos sin vincular. Revisa el número y vuelve a empezar con: npm run code -- +${pairingNumber}`))
+return
+}
+
+console.log(chalk.bold.yellowBright(`[⚠] El código anterior venció (${reason}). Generando uno nuevo (${cycles}/${PAIRING_MAX_CYCLES})...`))
+if (typeof process.send === 'function') {
+process.send('reset')
+} else {
+process.exit(1)
+}
+}
+
 let opcion
 if (methodCodeQR) opcion = '1'
 if (!methodCodeQR && !methodCode && !fs.existsSync(credsFile)) {
@@ -504,6 +559,9 @@ if (!addNumber) {
 console.log(chalk.bold.redBright('[⚠] Sin número no se puede generar el código de vinculación. Usa: npm run code -- +573001234567'))
 } else {
 if (rl) rl.close()
+pairingNumber = addNumber
+// Only after a restart; the first code shows up immediately.
+if (readPairingCycles() > 0) await new Promise((resolve) => setTimeout(resolve, PAIRING_COOLDOWN_MS))
 const codeBot = await requestPairingWithRetry(addNumber)
 if (!codeBot) {
 console.log(chalk.bold.redBright('[⚠] WhatsApp cerró la conexión antes de entregar el código. Reintenta con: npm run code -- ' + `+${addNumber}`))
@@ -590,6 +648,15 @@ console.error('[conn]', JSON.stringify({connection, qr: qr ? qr.length : 0, reas
 global.stopped = connection
 if (isNewLogin) conn.isInit = true
 
+const activeReason = new Boom(lastDisconnect?.error)?.output?.statusCode
+
+// A close while pairing means the code was never redeemed. The device keys in
+// creds.json are single-use and already rejected, so reconnecting cannot work.
+if (connection === 'close' && pairingNumber && !conn?.authState?.creds?.registered) {
+restartPairing(activeReason ?? 'sin código')
+return
+}
+
 if (connection === 'close' && !existsSync(credsFile)) {
 if (!printingNoConn) {
 printingNoConn = true
@@ -625,6 +692,11 @@ console.log(chalk.dim(`[qr] ${qr}`))
 
 if (connection == 'open') {
 console.log(chalk.bold.greenBright(mid.mConexion))
+// Linked: the pairing cycle counter starts fresh for the next device.
+try {
+rmSync(PAIRING_MARKER, {force: true})
+} catch {}
+pairingNumber = null
 await joinChannels(conn)
 }
 

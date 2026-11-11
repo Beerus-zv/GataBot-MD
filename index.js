@@ -62,9 +62,10 @@ let p = fork()
 p.on('message', (data) => {
 switch (data) {
 case 'reset':
+// start.apply(this, arguments) used to pass 'reset' as the entry file, so the
+// restart forked a path that does not exist. Killing here is enough: the exit
+// handler below relaunches main.js.
 p.process.kill()
-isRunning = false
-start.apply(this, arguments)
 break
 case 'uptime':
 p.send(process.uptime())
