@@ -23,6 +23,12 @@ const { default: protoHolder } = await import(toUrl(join(root, 'lib', 'simple.js
 const text = process.argv[2] || '.menu'
 const botJid = '573000000000@s.whatsapp.net'
 const userJid = '573000000001@s.whatsapp.net'
+// PROBE_LID=1 simulates a migrated account: WhatsApp addresses the sender as
+// 166842769391723@lid and puts the phone-number jid in key.participantAlt.
+// Without the PN the menu prints "@166842769391723@lid" instead of a mention.
+const userLid = '166842769391723@lid'
+const useLid = Boolean(process.env.PROBE_LID)
+const chatJid = useLid ? userLid : userJid
 
 const chatStore = {}
 const captured = []
@@ -33,6 +39,13 @@ const conn = {
   chats: chatStore,
   prefix: '.',
   decodeJid: (j) => (j ? String(j).replace(/:\d+/, '') : j),
+  // Real socket surface: buildSocket() exposes signalRepository, and the LID
+  // mapping is the only place a phone number can be recovered from a lid.
+  signalRepository: {
+    lidMapping: {
+      getPNForLID: async (lid) => (useLid && lid === userLid ? userJid : null)
+    }
+  },
   pushMessage: async () => {},
   getName: (jid) => String(jid).split('@')[0],
   readMessages: async () => {},
@@ -76,14 +89,14 @@ const now = Math.floor(Date.now() / 1000)
 global.db = {
   data: {
     users: {
-      [userJid]: {
+      [chatJid]: {
         exp: 0, money: 150, limit: 15, level: 1, role: 'NOVATO', registered: false,
         premium: false, premiumTime: 0, spam: 0, antispam: 0, banned: false,
         warn: 0, afk: -1, mesagge: 0, reporte: 0, joincount: 1, name: 'Probe'
       }
     },
     chats: {
-      [userJid]: {isBanned: false, modoadmin: false, sWelcome: '', sBye: '', sPromote: '', sDemote: '', antilink: false, autolevelup: false},
+      [chatJid]: {isBanned: false, modoadmin: false, sWelcome: '', sBye: '', sPromote: '', sDemote: '', antilink: false, autolevelup: false},
       [botJid]: {}
     },
     settings: {
@@ -129,7 +142,13 @@ const { proto } = await import('@whiskeysockets/baileys')
 //   22 starting 3E -> web     18 chars           -> desktop
 const probeId = process.env.PROBE_ID || 'PROBE' + Date.now()
 const raw = proto.WebMessageInfo.fromObject({
-  key: {remoteJid: userJid, fromMe: false, id: probeId, participant: userJid},
+  key: {
+    remoteJid: chatJid,
+    fromMe: false,
+    id: probeId,
+    participant: chatJid,
+    ...(useLid ? {participantAlt: userJid, remoteJidAlt: userJid} : {})
+  },
   message: {conversation: text},
   messageTimestamp: now,
   pushName: 'Probe'
@@ -153,6 +172,9 @@ console.log(`[probe] replies captured: ${captured.length}`)
 for (const [i, entry] of captured.entries()) {
   const body = typeof entry.content === 'string' ? entry.content : JSON.stringify(entry.content)
   console.log(`[probe] #${i} chat=${entry.chat} len=${body.length} head=${JSON.stringify(body.slice(0, 120))}`)
+  // PROBE_FULL makes the whole reply greppable, for assertions about content
+  // such as the mention jid rather than just its length.
+  if (process.env.PROBE_FULL) console.log(`[probe] #${i} full=${JSON.stringify(body)}`)
 }
 
 process.exit(captured.length ? 0 : 1)

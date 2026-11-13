@@ -1,5 +1,5 @@
 import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
-import { smsg } from './lib/simple.js'
+import { smsg, resolverSenderPn } from './lib/simple.js'
 import { format } from 'util'
 import { fileURLToPath } from 'url'
 import path, {join} from 'path'
@@ -52,6 +52,11 @@ return
 if (global.db.data == null) await global.loadDatabase()
 try {
 m = smsg(this, m) || m
+// WhatsApp migra cuentas a LID: el remitente llega como 166842769391723@lid y
+// el número de teléfono solo existe en el mapping del socket. Sin resolverlo,
+// cualquier plantilla que construya una mención con m.sender imprime
+// "@166842769391723@lid" en el chat en vez de linkear al usuario.
+await resolverSenderPn(this, m)
 if (!m) return
 m.exp = 0
 m.limit = false

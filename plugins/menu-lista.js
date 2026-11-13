@@ -80,10 +80,15 @@ role,
 readmore: readMore
 }
 text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
-let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let mentionedJid = [who]
-let username = conn.getName(who)
-let taguser = '@' + m.sender.split('@s.whatsapp.net')[0]
+// WhatsApp migra cuentas a LID: m.sender llega como 166842769391723@lid y el
+// número real queda en m.senderPn (resuelto en handler.js contra el mapping
+// del socket). Sin PN resuelto se menciona por nombre: "@123@lid" en el chat
+// no es una mención, es ruido.
+const senderJid = m.senderPn || m.sender
+const senderEsLid = /@(hosted\.)?lid$/i.test(senderJid)
+let mentionedJid = senderEsLid ? [] : [m.mentionedJid?.[0] || (m.fromMe ? conn.user.jid : senderJid)]
+let username = conn.getName(mentionedJid[0] || senderJid)
+let taguser = senderEsLid ? m.pushName || user.name || 'tú' : '@' + senderJid.split('@')[0]
 let pp = gataVidMenu
 let pareja = global.db.data.users[m.sender].pasangan
 //let fsizedoc = '1'.repeat(10)
@@ -307,10 +312,10 @@ try {
 await conn.sendFile(m.chat, menuImagen, 'menu.jpg', menu, fkontak, false)
 } catch (e) {
 console.error(`[menu] imagen omitida: ${e?.message ?? e}`)
-await conn.sendMessage(m.chat, {text: menu}, {quoted: m})
+await conn.sendMessage(m.chat, {text: menu, mentions: mentionedJid}, {quoted: m})
 }
 } else {
-await conn.sendMessage(m.chat, {text: menu}, {quoted: m})
+await conn.sendMessage(m.chat, {text: menu, mentions: mentionedJid}, {quoted: m})
 }
 }
 } catch (e) {
