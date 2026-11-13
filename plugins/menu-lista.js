@@ -293,34 +293,24 @@ let menu =
 ┃✅ *_CUENTAS OFICIALES GATABOT_* ✅
 ┃➺ _${usedPrefix}cuentasgatabot | cuentasgb_
 ┃
+┃🆔 _menu-v3 | texto plano_
+┃
 *╰━━━━━━━━━━━━━⬣*`.trim()
-// Both sends are best-effort. The menu itself is the payload; if the upload or
-// the audio fails the text still has to land, never a generic "ALGO SALIÓ MAL".
+// El menú sale como texto plano con sendMessage. Es el único tipo de mensaje
+// que todo cliente de WhatsApp renderiza — ni tarjeta interactiva, ni caption
+// de imagen, ni nota de voz. La imagen es decoración opcional: sin ella el
+// comando no puede quedarse mudo, y con ella tampoco.
+const menuImagen = global.gataImg || imagenLocalMenu()
+const usarImagen = Boolean(global.opts?.['menuimagen']) && menuImagen
+if (usarImagen) {
 try {
-await conn.sendFile(m.chat, gataImg, 'lp.jpg', menu, fkontak, false, {
-contextInfo: {
-externalAdReply: {
-mediaUrl: null,
-mediaType: 1,
-description: null,
-title: gt,
-body: ' 😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 - 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽 ',
-previewType: 0,
-thumbnail: imagen4,
-sourceUrl: redesMenu
-}
-}
-})
+await conn.sendFile(m.chat, menuImagen, 'menu.jpg', menu, fkontak, false)
 } catch (e) {
-console.error(`[menu] el envío con tarjeta falló: ${e?.message ?? e}`)
-await m.reply(menu)
+console.error(`[menu] imagen omitida: ${e?.message ?? e}`)
+await conn.sendMessage(m.chat, {text: menu}, {quoted: m})
 }
-// qu.ax rotates files without notice; its 404 used to throw here and take the
-// whole command down. Local file, and optional.
-try {
-await conn.sendMessage(m.chat, {audio: fs.readFileSync(join(__dirname, '../media/a.mp3')), fileName: 'menu.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
-} catch (e) {
-console.error(`[menu] audio omitido: ${e?.message ?? e}`)
+} else {
+await conn.sendMessage(m.chat, {text: menu}, {quoted: m})
 }
 }
 } catch (e) {
@@ -356,6 +346,22 @@ let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
 let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
 let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
 return [h, m, s].map((v) => v.toString().padStart(2, 0)).join(':')
+}
+
+// Imagen de respaldo, resuelta localmente. global.gataImg lo define el hook
+// before() de plugins/_content.js, que corre antes que este comando pero puede
+// no completarse si la red falla — leer el directorio es síncrono y no depende
+// de nada externo.
+export function imagenLocalMenu() {
+try {
+const dir = join(__dirname, '../media/menus')
+const archivos = fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f))
+if (!archivos.length) return null
+return fs.readFileSync(join(dir, archivos[Math.floor(Math.random() * archivos.length)]))
+} catch (e) {
+console.error(`[menu] sin imagen local: ${e?.message ?? e}`)
+return null
+}
 }
 
 /* 
