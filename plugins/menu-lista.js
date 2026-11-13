@@ -102,7 +102,12 @@ months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto
 lugarFecha.locale('es', formatoFecha)
 const horarioFecha = lugarFecha.format('dddd, DD [de] MMMM [del] YYYY || HH:mm A').replace(/^\w/, (c) => c.toUpperCase())
 
-if (!m.isWABusiness && !/web|desktop|unknown/gi.test(dispositivo)) {
+// The interactive single_select card only renders on some clients: WhatsApp
+// Messenger silently drops it, WhatsApp Business shows it. A menu that depends
+// on which app the reader installed is not a menu. Default is the text+image
+// path for everyone; `node index.js --menuinteractivo` brings the card back.
+const usarMenuInteractivo = Boolean(global.opts?.['menuinteractivo'])
+if (usarMenuInteractivo) {
 let menu = `⎔ \`\`\`${horarioFecha}\`\`\`
 ⎔ *${lenguajeGB['smsTotalUsers']()}* ➺ _${Object.keys(global.db.data.users).length}_ 
 ⎔ *Registrados »* ${rtotalreg}/${totalreg}    

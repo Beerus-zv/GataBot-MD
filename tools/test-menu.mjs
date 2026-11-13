@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /**
- * The menu has to answer on every device class and when the media fails.
+ * The menu has to answer on every client and when the media fails.
  *
  * getDevice() decodes a WhatsApp message id into ios / web / android / desktop /
- * unknown, and menu-lista.js branches on it: an interactive card for phone
- * clients, an image+audio message for web/desktop. Both branches can fail on
- * their own, and the failure used to surface as "ALGO SALIÓ MAL" with nothing
- * else — or as no reply at all.
- *
- * Every case below must produce a usable menu, never the generic error.
+ * unknown. menu-lista.js used to branch on it: an interactive card for phone
+ * clients, an image+audio message for web/desktop. WhatsApp Messenger silently
+ * drops the interactive card while WhatsApp Business renders it, so the menu
+ * simply never appeared for some readers. Both paths are still exercised here;
+ * every case must produce a usable menu, never the generic error, never silence.
  *
  * Usage: node tools/test-menu.mjs
  * Exit:  0 when all cases answer, 1 otherwise.
