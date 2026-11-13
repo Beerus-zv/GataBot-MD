@@ -418,7 +418,9 @@ continue
 try {
 let code = await global.conn.requestPairingCode(number)
 code = code?.match(/.{1,4}/g)?.join('-') || code
+pairingCodeIssued = true
 console.log(chalk.bold.white(chalk.bgMagenta(mid.pairingCode)), chalk.bold.white(chalk.white(code)))
+console.log(chalk.bold.cyanBright('[⏳] Ese código vence en ~60 s. En el teléfono: WhatsApp > Dispositivos vinculados > Vincular un dispositivo > Vincular con número de teléfono.'))
 return code
 } catch (error) {
 const message = error?.message ?? String(error)
@@ -449,6 +451,15 @@ const PAIRING_MAX_CYCLES = 10
 const PAIRING_COOLDOWN_MS = 15_000
 let pairingNumber = null
 let pairingRestarting = false
+// A code only lives about a minute. Boot (330 plugins, handler, quick test) used
+// to run between printing the code and the bot being usable, so the countdown
+// was already half gone — or over — before the digits could be typed. The number
+// is resolved early, the request itself is deferred to the end of boot.
+let pairingPending = false
+// Only a code that was actually delivered can "expire". A socket that closes
+// during boot is a dropped connection, not a burnt code, and must not cost a
+// cycle from the ten allowed.
+let pairingCodeIssued = false
 
 const readPairingCycles = () => {
 try {
@@ -559,13 +570,11 @@ if (!addNumber) {
 console.log(chalk.bold.redBright('[⚠] Sin número no se puede generar el código de vinculación. Usa: npm run code -- +573001234567'))
 } else {
 if (rl) rl.close()
+// Resolved now so a close event during boot is recognised as "pairing in
+// progress" instead of "no session"; the code itself is requested once the
+// bot has finished loading, further down.
 pairingNumber = addNumber
-// Only after a restart; the first code shows up immediately.
-if (readPairingCycles() > 0) await new Promise((resolve) => setTimeout(resolve, PAIRING_COOLDOWN_MS))
-const codeBot = await requestPairingWithRetry(addNumber)
-if (!codeBot) {
-console.log(chalk.bold.redBright('[⚠] WhatsApp cerró la conexión antes de entregar el código. Reintenta con: npm run code -- ' + `+${addNumber}`))
-}
+pairingPending = true
 }
 }
 }
@@ -652,12 +661,12 @@ const activeReason = new Boom(lastDisconnect?.error)?.output?.statusCode
 
 // A close while pairing means the code was never redeemed. The device keys in
 // creds.json are single-use and already rejected, so reconnecting cannot work.
-if (connection === 'close' && pairingNumber && !conn?.authState?.creds?.registered) {
+if (connection === 'close' && pairingNumber && pairingCodeIssued && !conn?.authState?.creds?.registered) {
 restartPairing(activeReason ?? 'sin código')
 return
 }
 
-if (connection === 'close' && !existsSync(credsFile)) {
+if (connection === 'close' && !existsSync(credsFile) && !pairingPending) {
 if (!printingNoConn) {
 printingNoConn = true
 await logCritical(chalk.bold.redBright('⚠️ SIN CONEXIÓN, BORRE LA CARPETA GataBotSession Y ESCANEA EL CÓDIGO QR ⚠️'))
@@ -1017,6 +1026,17 @@ console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeSession()))
 },
 1000 * 60 * 10
 )
+
+// End of boot: plugins, handler and quick test are all in. Only now does the
+// clock on the pairing code start, so the whole minute belongs to the user.
+if (pairingPending) {
+pairingPending = false
+if (readPairingCycles() > 0) await new Promise((resolve) => setTimeout(resolve, PAIRING_COOLDOWN_MS))
+const codeBot = await requestPairingWithRetry(pairingNumber)
+if (!codeBot) {
+console.log(chalk.bold.redBright(`[⚠] WhatsApp cerró la conexión antes de entregar el código. Reintenta con: npm run code -- +${pairingNumber}`))
+}
+}
 
 _quickTest()
 .then(() => conn.logger.info(chalk.bold(lenguajeGB['smsCargando']().trim())))

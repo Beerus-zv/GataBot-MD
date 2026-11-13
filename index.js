@@ -59,12 +59,17 @@ gradient: ['red', 'magenta']
 })
 setupMaster({exec: args[0], args: args.slice(1)})
 let p = fork()
+// A pairing expiry restarts the worker on purpose. Without this flag the exit
+// handler prints "⚠️ ERROR ⚠️ >> SIGTERM" and the user reads a normal restart as
+// a crash.
+let plannedRestart = false
 p.on('message', (data) => {
 switch (data) {
 case 'reset':
 // start.apply(this, arguments) used to pass 'reset' as the entry file, so the
 // restart forked a path that does not exist. Killing here is enough: the exit
 // handler below relaunches main.js.
+plannedRestart = true
 p.process.kill()
 break
 case 'uptime':
@@ -75,7 +80,12 @@ break
 
 p.on('exit', (_, code) => {
 isRunning = false
+if (plannedRestart) {
+plannedRestart = false
+console.log(chalk.bold.yellowBright('[↻] Reiniciando para pedir un código nuevo...'))
+} else {
 console.error('⚠️ ERROR ⚠️ >> ', code)
+}
 start('main.js') //
 
 if (code === 0) return

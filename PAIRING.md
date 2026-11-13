@@ -30,10 +30,17 @@ Orden de prioridad. La primera que tenga un número válido gana.
 
 ## Flujo
 
-1. Sesión sin registrar → el código pide número, pide `requestPairingCode`.
-2. WhatsApp devuelve código de 8 dígitos, impreso como `XXXX-XXXX`.
-3. WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.
-4. Introduce el código.
+1. Sesión sin registrar → el código pide número.
+2. El bot termina de cargar (330 plugins + handler) **y solo entonces** pide
+   `requestPairingCode`. Antes lo pedía al abrir el socket, y la carga se comía
+   casi todo el minuto de vida del código: al teclearlo ya estaba vencido.
+3. WhatsApp devuelve código de 8 dígitos, impreso como `XXXX-XXXX`.
+4. WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.
+5. Introduce el código.
+
+El código vive ~60 s desde que se **imprime**. Si vence, el bot se reinicia solo
+(`[↻] Reiniciando para pedir un código nuevo...`) y emite otro. El reinicio no es
+un fallo.
 
 ## Fallos conocidos
 
@@ -41,5 +48,8 @@ Orden de prioridad. La primera que tenga un número válido gana.
   quedó de un emparejamiento a medias. Se borra solo y se pide número de nuevo.
 - `No se pudo pedir el código`: el número no existe en WhatsApp o no tiene
   cuenta. Revisa el código de país.
+- `El código anterior venció (428)`: no se tecleó dentro del minuto. Se genera
+  otro; hay 10 intentos antes de parar (contador en `.pairing-attempts`, se borra
+  al vincular).
 - Sesión ya vinculada (`registered: true`): el modo código no pregunta nada,
   entra directo.

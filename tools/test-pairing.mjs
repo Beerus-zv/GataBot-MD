@@ -70,11 +70,17 @@ setTimeout(async () => {
   const log = readLog();
   const gotCode = /\b[A-Z0-9]{4}-[A-Z0-9]{4}\b/.test(log);
   const reachedRequest = /Intento \d\/\d/.test(log) || /No se pudo pedir/.test(log);
+  // The code lives ~60s. It used to be requested before the 330 plugins loaded,
+  // which ate most of that window. Guard the order so it cannot regress.
+  const pluginsAt = log.search(/\[plugins\] \d+ cargados/);
+  const codeAt = log.search(/\b[A-Z0-9]{4}-[A-Z0-9]{4}\b/);
+  const codeAfterPlugins = pluginsAt === -1 || codeAt > pluginsAt;
 
   console.log(`[pairing-test] elapsed=${Date.now() - startedAt}ms childExit=${exitCode ?? 'alive'}`);
   console.log(`[pairing-test] stale session wiped: ${/Sesi[oó]n sin registrar/.test(log)}`);
   console.log(`[pairing-test] prompt shown: ${sent}`);
   console.log(`[pairing-test] pairing code printed: ${gotCode}`);
+  console.log(`[pairing-test] code printed after plugins loaded: ${codeAfterPlugins}`);
   console.log(`[pairing-test] request attempted: ${reachedRequest}`);
 
   if (!sent) {
@@ -84,6 +90,11 @@ setTimeout(async () => {
   }
   if (!gotCode) {
     console.error('[pairing-test] FAIL — no pairing code reached the console');
+    console.error(log.split('\n').slice(-25).join('\n'));
+    process.exit(1);
+  }
+  if (!codeAfterPlugins) {
+    console.error('[pairing-test] FAIL — the code was requested before boot finished');
     console.error(log.split('\n').slice(-25).join('\n'));
     process.exit(1);
   }
