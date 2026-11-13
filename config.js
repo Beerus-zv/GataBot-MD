@@ -147,6 +147,18 @@ global.exito = eg
 
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
 global.wm = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩-𝙈𝘿 : 𝙂𝙖𝙩𝙖 𝘿𝙞𝙤𝙨'
+// Fake "quoted" contact used by hundreds of plugin replies. _content.js rewrites
+// it per message with the sender's card, but that hook only runs after the
+// command loop breaks, so the first command of a boot needed a static default.
+global.fkontak = {
+key: {participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'GataBot'},
+message: {
+contactMessage: {
+vcard: 'BEGIN:VCARD\nVERSION:3.0\nN:GataBot;;;\nFN:GataBot\nitem1.TEL;waid=0:0\nitem1.X-ABLabel:Ponsel\nEND:VCARD'
+}
+},
+participant: '0@s.whatsapp.net'
+}
 global.igfg = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩-𝙈𝘿'
 global.nomorown = '593993684821'
 global.pdoc = [

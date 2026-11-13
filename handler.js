@@ -9,6 +9,11 @@ import chalk from 'chalk'
 import fetch from 'node-fetch'
 import './plugins/_content.js'
 
+// One switch for the whole receive path: WA_DEBUG already traces connection
+// updates in main.js; this makes it trace message dispatch too, which is the
+// difference between "the bot never got the message" and "a plugin threw".
+const DISPATCH_DEBUG = Boolean(process.env.WA_DEBUG || process.env.HANDLER_DEBUG)
+
 /**
  * @type {import('@adiwajshing/baileys')}
  */
@@ -51,6 +56,9 @@ if (!m) return
 m.exp = 0
 m.limit = false
 m.money = false
+if (DISPATCH_DEBUG) {
+console.error(`[dispatch] in chat=${m.chat} fromMe=${m.fromMe} sender=${m.sender} text=${JSON.stringify(m.text)}`)
+}
 try {
 // TODO: use loop to insert data instead of this
 let user = global.db.data.users[m.sender]
@@ -1142,8 +1150,10 @@ m.id.startsWith('EvoGlobalBot-') ||
 m.id.startsWith('B24E') ||
 (m.id.startsWith('8SCO') && m.id.length === 20) ||
 m.id.startsWith('FizzxyTheGreat-')
-)
+) {
+if (DISPATCH_DEBUG) console.error(`[dispatch] dropped: message id ${m.id} looks like another bot's`)
 return
+}
 
 if (opts['nyimak']) return
 if (!isROwner && opts['self']) return
@@ -1267,6 +1277,7 @@ return [re.exec(m.text), re]
 let match = matchCandidates.find((p) => p[0])
 
 if (typeof plugin.before === 'function') {
+if (DISPATCH_DEBUG) console.error(`[dispatch] before ${name}`)
 if (
 await plugin.before.call(this, m, {
 match,
@@ -1313,6 +1324,7 @@ plugin.command instanceof RegExp
 
 if (!isAccept) continue
 m.plugin = name
+if (DISPATCH_DEBUG) console.error(`[dispatch] match ${name} command=${JSON.stringify(command)} prefix=${JSON.stringify(usedPrefix)}`)
 
 if (m.chat in global.db.data.chats || m.sender in global.db.data.users) {
 let chat = global.db.data.chats[m.chat]
@@ -1487,6 +1499,7 @@ chatUpdate,
 __dirname: ___dirname,
 __filename
 }
+if (DISPATCH_DEBUG) console.error(`[dispatch] call ${name}`)
 try {
 await plugin.call(this, m, extra)
 if (!isPrems) m.limit = m.limit || plugin.limit || false
