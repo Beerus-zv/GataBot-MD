@@ -85,7 +85,6 @@ let mentionedJid = [who]
 let username = conn.getName(who)
 let taguser = '@' + m.sender.split('@s.whatsapp.net')[0]
 let pp = gataVidMenu
-let vn = 'https://qu.ax/bfaM.mp3'
 let pareja = global.db.data.users[m.sender].pasangan
 //let fsizedoc = '1'.repeat(10)
 //let adReply = { fileLength: fsizedoc, seconds: fsizedoc, contextInfo: { forwardingScore: fsizedoc, externalAdReply: { showAdAttribution: true, title: wm, body: '👋 ' + username, mediaUrl: ig, description: 'Hola', previewType: 'PHOTO', thumbnail: await(await fetch(gataMenu.getRandom())).buffer(), sourceUrl: redesMenu.getRandom() }}}
@@ -195,7 +194,14 @@ buttonParamsJson
 }
 }
 const message = {messageContextInfo: {deviceListMetadata: {}, deviceListMetadataVersion: 2}, interactiveMessage}
+// The interactive card is presentation. If WhatsApp rejects it the text menu
+// still has to answer the command.
+try {
 await conn.relayMessage(m.chat, {viewOnceMessage: {message}}, {})
+} catch (e) {
+console.error(`[menu] menú interactivo falló: ${e?.message ?? e}`)
+await m.reply(menu)
+}
 } else {
 let menu =
 `${lenguajeGB['smsConfi2']()} *${user.genero === 0 ? '👤' : user.genero == 'Ocultado 🕶️' ? '🕶️' : user.genero == 'Mujer 🚺' ? '🚺' : user.genero == 'Hombre 🚹' ? '🚹' : '👤'} ${user.registered === true ? user.name : taguser} 💖*
@@ -283,6 +289,9 @@ let menu =
 ┃➺ _${usedPrefix}cuentasgatabot | cuentasgb_
 ┃
 *╰━━━━━━━━━━━━━⬣*`.trim()
+// Both sends are best-effort. The menu itself is the payload; if the upload or
+// the audio fails the text still has to land, never a generic "ALGO SALIÓ MAL".
+try {
 await conn.sendFile(m.chat, gataImg, 'lp.jpg', menu, fkontak, false, {
 contextInfo: {
 externalAdReply: {
@@ -297,10 +306,22 @@ sourceUrl: redesMenu
 }
 }
 })
-await conn.sendMessage(m.chat, {audio: {url: vn}, fileName: 'error.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
-//conn.sendFile(m.chat, gataVidMenu.getRandom(), 'gata.mp4', menu, fkontak)
+} catch (e) {
+console.error(`[menu] el envío con tarjeta falló: ${e?.message ?? e}`)
+await m.reply(menu)
+}
+// qu.ax rotates files without notice; its 404 used to throw here and take the
+// whole command down. Local file, and optional.
+try {
+await conn.sendMessage(m.chat, {audio: fs.readFileSync(join(__dirname, '../media/a.mp3')), fileName: 'menu.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
+} catch (e) {
+console.error(`[menu] audio omitido: ${e?.message ?? e}`)
+}
 }
 } catch (e) {
+// Report the actual reason, not just "algo salió mal". Until now the only copy
+// of the error was the terminal, and the chat showed nothing actionable.
+const detalle = String(e?.message ?? e ?? '').slice(0, 300)
 await m.reply(
 lenguajeGB['smsMalError3']() +
 '\n*' +
@@ -311,7 +332,8 @@ usedPrefix +
 '* ' +
 `${lenguajeGB.smsMensError2()} ` +
 usedPrefix +
-command
+command +
+(detalle ? `\n\n\`\`\`${detalle}\`\`\`` : '')
 )
 console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
 console.log(e)

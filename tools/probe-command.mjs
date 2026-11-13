@@ -42,6 +42,11 @@ const conn = {
   groupMetadata: async () => ({participants: []}),
   onWhatsApp: async () => [{exists: false}],
   sendMessage: async (chat, content) => {
+    // PROBE_FAIL_MEDIA=1 makes every media send throw, which is how a dead URL
+    // or a rejected card behaves against a real socket.
+    if (process.env.PROBE_FAIL_MEDIA && (content?.audio || content?.image || content?.video)) {
+      throw new Error('probe: media send failed (simulated)')
+    }
     captured.push({chat, content})
     return {key: {id: 'probe'}}
   },
@@ -50,10 +55,16 @@ const conn = {
     return {key: {id: 'probe'}}
   },
   sendFile: async (chat, file, filename, caption, quoted, ...rest) => {
+    if (process.env.PROBE_FAIL_MEDIA) throw new Error('probe: sendFile failed (simulated)')
     captured.push({chat, content: String(caption ?? ''), file})
     return {key: {id: 'probe'}}
   },
   sendButton: async () => ({key: {id: 'probe'}}),
+  relayMessage: async (chat, message, options) => {
+    if (process.env.PROBE_FAIL_MEDIA) throw new Error('probe: relayMessage rejected (simulated)')
+    captured.push({chat, content: JSON.stringify(message), relay: true, options})
+    return 'probe-relay'
+  },
   sendPresenceUpdate: async () => {},
   updateProfilePicture: async () => {},
   logger: {info: () => {}, warn: () => {}, error: () => {}},
@@ -112,8 +123,13 @@ if (process.env.HANDLER_DEBUG) {
 }
 
 const { proto } = await import('@whiskeysockets/baileys')
+// getDevice() decodes the message id to ios / web / android / desktop / unknown,
+// and menu-lista branches on it. PROBE_ID lets a run pick the branch:
+//   21 chars    -> android   20 chars starting 3A -> ios
+//   22 starting 3E -> web     18 chars           -> desktop
+const probeId = process.env.PROBE_ID || 'PROBE' + Date.now()
 const raw = proto.WebMessageInfo.fromObject({
-  key: {remoteJid: userJid, fromMe: false, id: 'PROBE' + Date.now(), participant: userJid},
+  key: {remoteJid: userJid, fromMe: false, id: probeId, participant: userJid},
   message: {conversation: text},
   messageTimestamp: now,
   pushName: 'Probe'

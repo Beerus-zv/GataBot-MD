@@ -19,6 +19,7 @@
     "test": "node test.js",
     "test2": "nodemon index.js",
     "probe": "node tools/probe-command.mjs",
+    "test:menu": "node tools/test-menu.mjs",
     "verify": "node test.js && node tools/dep-audit.mjs && node tools/import-smoke.mjs"
   },
   "homepage": "https://github.com/GataNina-Li/GataBot-MD",
