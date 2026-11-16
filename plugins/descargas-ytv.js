@@ -1,8 +1,6 @@
 import fetch from 'node-fetch'
 import yts from 'yt-search'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const {ytmp4} = require('@hiudyy/ytdl')
+import { ytdlLocalVideo } from '../lib/ytdl-local.js'
 
 const LimitVid = 450 * 1024 * 1024 // 450MB
 
@@ -42,7 +40,7 @@ return conn.reply(m.chat, `${lenguajeGB['smsMalError3']()}#report ${lenguajeGB['
 }
 
 try {
-const data = await ytmp4(target)
+const data = await ytdlLocalVideo(target)
 
 const out = typeof data === 'string' ? data : data?.url || data?.result || data?.downloadUrl || data?.dl || data
 

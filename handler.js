@@ -1229,10 +1229,41 @@ m.isChannel = m.chat.includes('@newsletter') || m.sender.includes('@newsletter')
 
 const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
 
+// _content.js publica fake, fkontak, global.wait y las imágenes del menú, que
+// usan casi todos los plugins. El recorrido de global.plugins va por nombre de
+// archivo y lo deja en la posición ~322 de 330, así que se ejecuta primero de
+// forma explícita; el bucle lo salta para este mensaje.
+const contentPlugin = global.plugins['_content.js']
+if (contentPlugin && typeof contentPlugin.before === 'function' && !m.__gataContentReady) {
+try {
+await contentPlugin.before.call(this, m, {
+match: null,
+conn: this,
+participants,
+groupMetadata,
+user,
+bot,
+isROwner,
+isOwner,
+isRAdmin,
+isAdmin,
+isBotAdmin,
+isPrems,
+chatUpdate,
+__dirname: ___dirname,
+__filename: join(___dirname, '_content.js')
+})
+m.__gataContentReady = true
+} catch (error) {
+console.error('[content] before:', error)
+}
+}
+
 for (let name in global.plugins) {
 let plugin = global.plugins[name]
 if (!plugin) continue
 if (plugin.disabled) continue
+if (name === '_content.js' && m.__gataContentReady) continue
 
 const __filename = join(___dirname, name)
 

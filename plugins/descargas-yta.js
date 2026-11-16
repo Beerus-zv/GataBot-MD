@@ -1,8 +1,6 @@
 import fetch from 'node-fetch'
 import yts from 'yt-search'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const { ytmp3 } = require('@hiudyy/ytdl') //
+import { ytdlLocalAudio } from '../lib/ytdl-local.js'
 
 const LimitAud = 700 * 1024 * 1024 // 700MB
 
@@ -51,7 +49,7 @@ let handler = async (m, { text, conn, args, usedPrefix, command }) => {
     const target = youtubeLink || yt_play?.[0]?.url
     if (!target) throw new Error('No se encontró URL válida de YouTube ni resultados de búsqueda.')
 
-    const result = await ytmp3(target)
+    const result = await ytdlLocalAudio(target)
 
     let audioData = result
     let isDirect = true

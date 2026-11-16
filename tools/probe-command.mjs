@@ -113,7 +113,11 @@ global.db = {
   data: {
     users: {
       [chatJid]: {
-        exp: 0, money: 150, limit: 15, level: 1, role: 'NOVATO', registered: false,
+        exp: 0, money: 150, limit: 15, level: 1, role: 'NOVATO',
+        // PROBE_REGISTERED=1 lifts the registration gate, which is what a real
+        // user has after #verificar. Without it, half the plugins answer with the
+        // registration card and the code behind it never runs.
+        registered: Boolean(process.env.PROBE_REGISTERED),
         premium: false, premiumTime: 0, spam: 0, antispam: 0, banned: false,
         warn: 0, afk: -1, mesagge: 0, reporte: 0, joincount: 1, name: 'Probe'
       }
@@ -135,7 +139,8 @@ global.loadDatabase = async () => {}
 global.multiplier = 1
 global.ig = 'probe'
 global.asistencia = 'probe'
-global.APIs = {}
+// global.APIs comes from config.js. Wiping it here made every command that reads
+// an endpoint report a failure that only existed inside the probe.
 global.API = (u) => u
 global.getBuffer = async () => Buffer.alloc(0)
 

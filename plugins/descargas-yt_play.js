@@ -4,6 +4,7 @@ import yts from 'yt-search'
 import ytdl from 'ytdl-core'
 import axios from 'axios'
 import { ogmp3 } from '../lib/youtubedl.js'
+import { ytdlLocalAudio, ytdlLocalVideo } from '../lib/ytdl-local.js'
 const LimitAud = 725 * 1024 * 1024 // 725MB
 const LimitVid = 425 * 1024 * 1024 // 425MB
 let tempStorage = {}
@@ -76,6 +77,7 @@ const isAudio = text === '🎶' || text === 'audio'
 const selectedQuality = (isAudio ? audioQualities : videoQualities).includes(qualityInput) ? qualityInput : isAudio ? '320' : '720'
 
 const audioApis = [
+{url: () => ytdlLocalAudio(userVideoData.url), extract: (data) => ({data, isDirect: true})},
 {url: () => ogmp3.download(userVideoData.url, selectedQuality, 'audio'), extract: (data) => ({data: data.result.download, isDirect: false})},
 {url: () => ytmp3(userVideoData.url), extract: (data) => ({data, isDirect: true})},
 {
@@ -102,6 +104,7 @@ extract: (data) => ({data: data.result.download.url, isDirect: false})
 ]
 
 const videoApis = [
+{url: () => ytdlLocalVideo(userVideoData.url), extract: (data) => ({data, isDirect: true})},
 {url: () => ogmp3.download(userVideoData.url, selectedQuality, 'video'), extract: (data) => ({data: data.result.download, isDirect: false})},
 {url: () => ytmp4(userVideoData.url), extract: (data) => ({data, isDirect: false})},
 {

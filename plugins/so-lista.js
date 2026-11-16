@@ -138,9 +138,13 @@ let matchedAudio = audioMap.find((audio) => audio.regex.test(m.text))
 if (matchedAudio) {
   // await: sin él, un 404 del host de audio deja una promesa rechazada suelta y
   // el proceso se caía sesenta líneas más abajo, sin relación con el comando.
+  // Todo el mapa apunta a qu.ax, que ya no existe: cuando el host está muerto se
+  // envía el audio local en vez de una URL que solo devuelve 404.
   try {
     await this.sendPresenceUpdate('recording', m.chat)
-    await this.sendMessage(m.chat, {audio: {url: matchedAudio.url}, fileName: 'error.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
+    const muerto = /^https?:\/\/(?:qu\.ax|cdn\.dorratz\.com)\//i.test(matchedAudio.url)
+    const audio = muerto ? global.gataAudio : {url: matchedAudio.url}
+    await this.sendMessage(m.chat, {audio, fileName: 'error.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
   } catch (e) {
     console.error(`[so-lista] audio no entregado (${matchedAudio.url}): ${e?.message ?? e}`)
   }

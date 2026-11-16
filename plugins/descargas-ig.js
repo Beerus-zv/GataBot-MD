@@ -1,5 +1,6 @@
 import fetch from 'node-fetch'
 import axios from 'axios'
+import { instagramLocal } from '../lib/social-local.js'
 //import instagramGetUrl from 'instagram-url-direct';
 //import { instagram } from '@xct007/frieren-scraper';
 //import { instagramdl } from '@bochilteam/scraper';
@@ -12,6 +13,18 @@ await conn.sendMessage(m.chat, {text: waitt, edit: key})
 await conn.sendMessage(m.chat, {text: waittt, edit: key})
 await conn.sendMessage(m.chat, {text: waitttt, edit: key})
 try {
+// Resolutor propio primero: api.siputzx devuelve 404 desde hace meses.
+try {
+  const local = await instagramLocal(args[0])
+  for (const item of local.items) {
+    const isImage = item.type === 'image' || /\.(jpg|jpeg|png|webp)(\?|$)/i.test(item.url)
+    await conn.sendFile(m.chat, item.url, isImage ? 'ig.jpg' : 'ig.mp4', `${wm}`, m, null, fake)
+  }
+  await conn.sendMessage(m.chat, {text: waittttt, edit: key})
+  return
+} catch (e) {
+  console.log(`[instagram] resolutor local fallido: ${e?.message ?? e}`)
+}
 const res = await fetch(`https://api.siputzx.my.id/api/d/igdl?url=${args}`)
 const data = await res.json()
 const fileType = data.data[0].url.includes('.webp') ? 'image' : 'video'

@@ -2,40 +2,33 @@ import axios from 'axios'
 import fg from 'api-dylux'
 import cheerio from 'cheerio'
 import { Tiktok } from '../lib/tiktok.js'
+import { tiktokLocal } from '../lib/social-local.js'
 let handler = async (m, {conn, text, args, usedPrefix, command}) => {
 if (!text) throw `${lenguajeGB['smsAvisoMG']()}${mid.smsTikTok2}\n*${usedPrefix + command} https://vm.tiktok.com/ZM6n8r8Dk/*`
 if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok.com\/([^\s&]+)/gi.test(text)) throw `${lenguajeGB['smsAvisoFG']()}${mid.smsTikTok3}`
 await conn.reply(m.chat, `${lenguajeGB['smsAvisoEG']()}𝙋𝙍𝙊𝙉𝙏𝙊 𝙏𝙀𝙉𝘿𝙍𝘼 𝙀𝙇 𝙑𝙄𝘿𝙀𝙊 𝘿𝙀 𝙏𝙄𝙆𝙏𝙊𝙆 😸\n𝙎𝙊𝙊𝙉 𝙒𝙄𝙇𝙇 𝙃𝘼𝙑𝙀 𝙏𝙃𝙀 𝙏𝙄𝙆𝙏𝙊𝙆 𝙑𝙄𝘿𝙀𝙊 🥳`, fkontak, m)
+// Cadena de proveedores en orden de fiabilidad medida. api.dorratz.com cobra
+// (402) y devolvía el error antes que el vídeo, así que sale de la lista.
+const proveedores = [
+async () => { const d = await tiktokLocal(args[0]); return {video: d.video, caption: `⛱️ 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 : ${d.title}`} },
+async () => { const d = await Tiktok(args); return {video: d.nowm, caption: `⛱️ 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 : 𝙐𝙎𝙀𝙍𝙉𝘼𝙈𝙀\n${d.author}`} },
+async () => { const d = await tiktokdlF(args[0]); return {video: d.video, caption: wm} },
+async () => { const d = await fg.tiktok(args[0]); return {video: d.nowm, caption: wm} }
+]
+
+let entregado = false
+for (const proveedor of proveedores) {
 try {
-const data = await Tiktok(args)
-conn.sendMessage(m.chat, {video: {url: data.nowm}, caption: `⛱️ 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 : 𝙐𝙎𝙀𝙍𝙉𝘼𝙈𝙀\n${data.author}`}, {quoted: m})
-} catch {
-try {
-const tTiktok = await tiktokdlF(args[0])
-await conn.sendMessage(m.chat, {video: {url: tTiktok.video}, caption: `${wm}`}, {quoted: m})
-} catch {
-try {
-const response = await axios.get(`https://api.dorratz.com/v2/tiktok-dl?url=${args}`)
-if (response.data.status && response.data.data) {
-const videoData = response.data.data.media
-const videoUrl = videoData.org
-await conn.sendMessage(
-m.chat,
-{video: {url: videoUrl}, caption: `⛱️ 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 : 𝙐𝙎𝙀𝙍𝙉𝘼𝙈𝙀\n${response.data.data.author.nickname}\n${wm}`},
-{quoted: m}
-)
-}
-} catch {
-try {
-const p = await fg.tiktok(args[0])
-await conn.sendMessage(m.chat, {video: {url: p.nowm}, caption: `${wm}`}, {quoted: m})
+const r = await proveedor()
+if (!r?.video) throw new Error('sin enlace')
+await conn.sendMessage(m.chat, {video: {url: r.video}, caption: r.caption}, {quoted: m})
+entregado = true
+break
 } catch (e) {
-console.log(e)
-m.react('❌')
+console.log(`[tiktok] proveedor fallido: ${e?.message ?? e}`)
 }
 }
-}
-}
+if (!entregado) m.react('❌')
 }
 handler.help = ['tiktok']
 handler.tags = ['dl']

@@ -1,8 +1,6 @@
 import fetch from 'node-fetch'
 import yts from 'yt-search'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const {ytmp3, ytmp4} = require('@hiudyy/ytdl')
+import { ytdlLocalAudio, ytdlLocalVideo } from '../lib/ytdl-local.js'
 
 const LimitAud = 700 * 1024 * 1024 // 700MB
 const LimitVid = 450 * 1024 * 1024 // 450MB
@@ -78,7 +76,7 @@ const {target, title, thumb} = await resolveYouTubeTarget(m, args, usedPrefix, c
 
 if (isAudioDoc) {
 try {
-const result = await ytmp3(target)
+const result = await ytdlLocalAudio(target)
 const audioOut = result
 const isDirect = typeof audioOut !== 'string'
 const url = isDirect ? null : audioOut
@@ -115,7 +113,7 @@ throw e
 
 if (isVideoDoc) {
 try {
-const data = await ytmp4(target)
+const data = await ytdlLocalVideo(target)
 const out = typeof data === 'string' ? data : data?.url || data?.result || data?.downloadUrl || data?.dl || data
 
 const isUrl = typeof out === 'string'

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { pinterestLocal } from '../lib/social-local.js'
 
 let handler = async (m, {conn, text, usedPrefix, command}) => {
 if (!text) throw `${lenguajeGB['smsAvisoMG']()} ${mid.smsMalused7}\n*${usedPrefix + command} gata | cat*`
@@ -7,6 +8,13 @@ m.react('🔎')
 
 if (/^https?:\/\/[^\s]+$/i.test(text)) {
 try {
+  try {
+    const pin = await pinterestLocal(text)
+    await conn.sendMessage(m.chat, {image: {url: pin.image}, caption: `💞 *${pin.title}*`}, {quoted: m})
+    return m.react('✅')
+  } catch (e) {
+    console.log(`[pinterest] descarga directa fallida: ${e?.message ?? e}`)
+  }
 let {data} = await axios.get(`${global.APIs.stellar.url}/dow/pinterest?url=${text}&key=${global.APIs.stellar.key}`)
 if (!data?.data) throw null
 

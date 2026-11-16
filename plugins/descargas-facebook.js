@@ -22,99 +22,61 @@ m
 )
 let contenido = `✅ 𝙑𝙄𝘿𝙀𝙊 𝘿𝙀 𝙁𝘼𝘾𝙀𝘽𝙊𝙊𝙆\n${wm}`
 await m.react('⏱️')
-try {
-const apiUrl = `https://api.dorratz.com/fbvideo?url=${args}`
-const response = await fetch(apiUrl)
-const data = await response.json()
-// Filtrar solo elementos con url válidas (que empiecen con http)
-const videosConUrl = data.filter((v) => typeof v.url === 'string' && v.url.startsWith('http'))
+// Cadena de proveedores en el orden que responde hoy: api.dorratz.com cobra
+// (402) y api.agatz.xyz no resuelve, así que ambos salieron.
+const proveedores = [
+async () => {
+const r = await fetch(`${global.APIs.neoxr.url}/fb?url=${encodeURIComponent(args[0])}&apikey=${global.APIs.neoxr.key}`)
+const json = await r.json()
+if (!json?.status || !Array.isArray(json.data)) throw new Error('neoxr sin datos')
+const hd = json.data.find((v) => v.quality === 'HD')?.url
+const sd = json.data.find((v) => v.quality === 'SD')?.url
+const url = hd || sd
+if (!url) throw new Error('neoxr sin enlace')
+return {url, quality: hd ? '720p (HD)' : '360p (SD)'}
+},
+async () => {
+const r = await fg.fbdl(args[0])
+const url = r?.data?.[0]?.url
+if (!url) throw new Error('api-dylux sin enlace')
+return {url, quality: ''}
+},
+async () => {
+const r = await facebookdl(args[0])
+const {video} = await r
+let elegido = null
+for (const v of video) {
+if (v.quality === '720p (HD)') { elegido = v; break }
+if (!elegido) elegido = v
+}
+const url = elegido ? await elegido.download() : null
+if (!url) throw new Error('scraper sin enlace')
+return {url, quality: elegido.quality || ''}
+},
+async () => {
+const r = await fetch(`${apis}/download/facebook?url=${encodeURIComponent(args[0])}`)
+const json = await r.json()
+const url = json?.urls?.[0]?.hd || json?.urls?.[0]?.sd
+if (!url) throw new Error('delirius sin enlace')
+return {url, quality: ''}
+}
+]
 
-// Orden de preferencia: 1080p primero, luego 720p
-const prioridades = ['1080p', '720p (HD)']
-let videoSeleccionado = null
-
-for (const resolucion of prioridades) {
-videoSeleccionado = videosConUrl.find((v) => v.resolution === resolucion)
-if (videoSeleccionado) break
-}
-
-// Si no se encuentra resolución preferida, usar el primero válido
-if (!videoSeleccionado) {
-videoSeleccionado = videosConUrl[0]
-}
-
-const downloadUrl = videoSeleccionado.url
-const contenido = `Resolución: ${videoSeleccionado.resolution}`
-
-await conn.sendFile(m.chat, downloadUrl, 'video.mp4', contenido, m)
-await m.react('✅')
-} catch {
+let entregado = false
+for (const proveedor of proveedores) {
 try {
-const api = await fetch(`https://api.agatz.xyz/api/facebook?url=${args}`)
-const data = await api.json()
-const videoUrl = data.data.hd || data.data.sd
-const imageUrl = data.data.thumbnail
-if (videoUrl && videoUrl.endsWith('.mp4')) {
-await conn.sendFile(m.chat, videoUrl, 'video.mp4', `${gt}`, m, null, fake)
+const r = await proveedor()
+await conn.sendFile(m.chat, r.url, 'video.mp4', r.quality ? `Resolución: ${r.quality}` : contenido, m)
 await m.react('✅')
-} else if (imageUrl && (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.png'))) {
-await conn.sendFile(m.chat, imageUrl, 'thumbnail.jpg', contenido, m, null, fake)
-await m.react('✅')
-}
-} catch {
-try {
-const api = await fetch(`${global.APIs.neoxr.url}/fb?url=${args}&apikey=${global.APIs.neoxr.key}`)
-const response = await api.json()
-if (response.status && Array.isArray(response.data)) {
-const videoHD = response.data.find((video) => video.quality === 'HD')?.url
-const videoSD = response.data.find((video) => video.quality === 'SD')?.url
-const videoUrl = videoHD || videoSD
-await conn.sendFile(m.chat, videoUrl, 'video.mp4', contenido, m, null, fake)
-await m.react('✅')
-}
-} catch {
-try {
-const apiUrl = `${apis}/download/facebook?url=${args}`
-const apiResponse = await fetch(apiUrl)
-const delius = await apiResponse.json()
-if (!delius || !delius.urls || delius.urls.length === 0) return m.react('❌')
-const downloadUrl = delius.urls[0].hd || delius.urls[0].sd
-if (!downloadUrl) return m.react('❌')
-await conn.sendFile(m.chat, downloadUrl, 'error.mp4', contenido, m)
-} catch {
-try {
-const ress = await fg.fbdl(args[0])
-const urll = await ress.data[0].url
-await conn.sendFile(m.chat, urll, 'error.mp4', contenido, m)
-await m.react('✅')
-} catch {
-try {
-const result = await facebookdl(args[0])
-const {thumbnail, duration, video} = await result
-let url = '',
-quality = ''
-for (const data of [...video]) {
-if (quality === '360p (SD)') {
-url = await data.download()
-quality = data.quality
-} else if (quality === '720p (HD)') {
-quality = data.quality
-url = await data.download()
-} else {
-quality = data.quality
-url = await data.download()
-}
-}
-await conn.sendFile(m.chat, url, quality || '', contenido, m)
+entregado = true
+break
 } catch (e) {
-console.log(e)
+console.log(`[facebook] proveedor fallido: ${e?.message ?? e}`)
 }
 }
+if (!entregado) await m.react('❌')
 }
-}
-}
-}
-}
+
 handler.command = /^(facebook|fb|facebookdl|fbdl|facebook1|fb1|facebookdl1|fbdl1|facebook2|fb2|facebookdl2|fbdl2)$/i
 handler.limit = 3
 export default handler

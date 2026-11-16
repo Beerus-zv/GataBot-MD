@@ -1,12 +1,13 @@
 let handler = async (m, {conn, text, usedPrefix, command}) => {
 let text_ = 'Texto'
-let img = 'https://qu.ax/Vmpl.jpg'
+// qu.ax dejó de existir (404 en todas sus rutas). Se usa la imagen viva del repo.
+let img = global.img
 let titulo = 'Titulo texto'
 let canal = 'Canal'
 let id = '120363160031023229@newsletter'
 let titulo_cita = 'Cita Titulo'
 let text_cita = 'Cita Texto'
-let img_cita = 'https://qu.ax/TPVV.jpg'
+let img_cita = global.img
 let titulo_fkontak = 'Gata Dios'
 
 //let fkontak = { key: {participant: `0@s.whatsapp.net`, ...(m.chat ? { remoteJid: `6285600793871-1614953337@g.us` } : {}) }, message: { 'contactMessage': { 'displayName': `${titulo_fkontak}`, 'vcard': `BEGIN:VCARD\nVERSION:3.0\nN:XL;${titulo_fkontak},;;;\nFN:${titulo_fkontak},\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`, 'jpegThumbnail': null, thumbnail: null,sendEphemeral: true}}}
