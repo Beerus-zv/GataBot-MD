@@ -1,6 +1,6 @@
 /* import fetch from 'node-fetch' 
 //import { areJidsSameUser } from '@adiwajshing/baileys'
-let { areJidsSameUser } = (await import(global.baileys)).default
+let { areJidsSameUser } = await import(global.baileys)
 let handler = async (m, { conn, text, participants, usedPrefix, groupMetadata }) => {
 let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
 let grupos = [grupo1, grupo2, grupo3, grupo4, grupo5, grupo6]
@@ -81,7 +81,7 @@ export default handler
 */
 
 import fetch from 'node-fetch'
-let {areJidsSameUser} = (await import(global.baileys)).default
+let {areJidsSameUser} = await import(global.baileys)
 let handler = async (m, {conn, text, participants, usedPrefix, groupMetadata}) => {
 let fkontak = {
 key: {participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo'},

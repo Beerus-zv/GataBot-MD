@@ -33,7 +33,7 @@ const chatJid = useLid ? userLid : userJid
 const chatStore = {}
 const captured = []
 
-const conn = {
+const rawConn = {
   user: {id: botJid, jid: botJid, name: 'Probe'},
   ev: new EventEmitter(),
   chats: chatStore,
@@ -52,6 +52,10 @@ const conn = {
   sendPresenceUpdate: async () => {},
   profilePictureUrl: async () => 'https://example.invalid/pp.jpg',
   parseMention: async () => [],
+  // Real socket surface: makeChatsSocket exports fetchStatus, which
+  // owner/creator cards call before rendering. Without it the stub reports a
+  // failure that never happens on a live connection.
+  fetchStatus: async () => ({status: 'probe', setAt: new Date()}),
   groupMetadata: async () => ({participants: []}),
   onWhatsApp: async () => [{exists: false}],
   sendMessage: async (chat, content) => {
@@ -72,7 +76,10 @@ const conn = {
     captured.push({chat, content: String(caption ?? ''), file})
     return {key: {id: 'probe'}}
   },
-  sendButton: async () => ({key: {id: 'probe'}}),
+  sendButton: async (chat, content) => {
+    captured.push({chat, content, button: true})
+    return {key: {id: 'probe'}}
+  },
   relayMessage: async (chat, message, options) => {
     if (process.env.PROBE_FAIL_MEDIA) throw new Error('probe: relayMessage rejected (simulated)')
     captured.push({chat, content: JSON.stringify(message), relay: true, options})
@@ -83,6 +90,22 @@ const conn = {
   logger: {info: () => {}, warn: () => {}, error: () => {}},
   ws: {isOpen: true}
 }
+
+// The real conn carries ~60 helpers from lib/simple.js on top of the socket.
+// Re-declaring each one here turns every missing helper into a fake "not a
+// function" failure, so unknown properties resolve to a no-op that records its
+// own name. Anything that shows up in this list is a probe gap to review, not
+// proof of a broken command.
+const stubbedCalls = []
+const conn = new Proxy(rawConn, {
+  get(target, prop) {
+    if (prop in target) return target[prop]
+    if (typeof prop !== 'string' || prop === 'then' || prop === 'toJSON') return undefined
+    stubbedCalls.push(prop)
+    return async () => ({key: {id: 'probe'}, stub: prop})
+  }
+})
+global.__probeStubbedCalls = stubbedCalls
 global.conn = conn
 
 const now = Math.floor(Date.now() / 1000)
@@ -169,6 +192,7 @@ try {
 }
 
 console.log(`[probe] replies captured: ${captured.length}`)
+if (stubbedCalls.length) console.log(`[probe] stubbed conn members: ${[...new Set(stubbedCalls)].join(', ')}`)
 for (const [i, entry] of captured.entries()) {
   const body = typeof entry.content === 'string' ? entry.content : JSON.stringify(entry.content)
   console.log(`[probe] #${i} chat=${entry.chat} len=${body.length} head=${JSON.stringify(body.slice(0, 120))}`)

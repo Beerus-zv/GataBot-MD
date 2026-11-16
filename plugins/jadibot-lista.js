@@ -48,7 +48,7 @@ ${totalUsers ? `💠 *Sub Bots conectados:* ${totalUsers || 0}\n` : ''}${cantida
 try {
 await conn.sendMessage(
 m.chat,
-{image: {url: ['https://qu.ax/spUwF.jpeg', 'https://qu.ax/ZfKAD.jpeg', 'https://qu.ax/UKUqX.jpeg'].getRandom()}, caption: responseMessage},
+{image: global.gataImg, caption: responseMessage},
 {quoted: m}
 )
 } catch {

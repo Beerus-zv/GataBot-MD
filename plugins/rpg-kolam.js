@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-let {MessageType} = (await import(global.baileys)).default
+let {MessageType} = await import(global.baileys)
 let handler = async (m, {conn}) => {
 let name = global.db.data.users[m.sender].name
 let level = global.db.data.users[m.sender].level

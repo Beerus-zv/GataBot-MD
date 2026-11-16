@@ -1,4 +1,4 @@
-let {MessageType} = (await import(global.baileys)).default
+let {MessageType} = await import(global.baileys)
 let handler = async (m, {conn}) => {
 let user = global.db.data.users[m.sender]
 conn.reply(m.chat, '*LISTO*', m)

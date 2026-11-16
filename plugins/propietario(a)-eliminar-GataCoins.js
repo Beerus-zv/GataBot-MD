@@ -1,5 +1,5 @@
 //import MessageType from '@adiwajshing/baileys'
-let MessageType = (await import(global.baileys)).default
+let MessageType = await import(global.baileys)
 let pajak = 0
 let handler = async (m, {conn, text}) => {
 let who

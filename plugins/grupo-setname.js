@@ -1,5 +1,5 @@
 //import Presence from '@adiwajshing/baileys'
-let Presence = (await import(global.baileys)).default
+let Presence = await import(global.baileys)
 let handler = async (m, {conn, args, text}) => {
 const pp = (await conn.profilePictureUrl(m.chat, 'image').catch((_) => null)) || './src/grupos.jpg'
 if (!text) return conn.reply(m.chat, lenguajeGB['smsNam2'](), fkontak, m)

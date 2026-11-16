@@ -5,7 +5,7 @@ let poin_lose = -100
 let poin_bot = 200
 global.suit = global.suit ? global.suit : {}
 //import MessageType from '@adiwajshing/baileys'
-let MessageType = (await import(global.baileys)).default
+let MessageType = await import(global.baileys)
 let handler = async (m, {conn, text, command, usedPrefix, args}) => {
 let pp = 'https://telegra.ph/file/c7924bf0e0d839290cc51.jpg'
 if (!db.data.chats[m.chat].game)

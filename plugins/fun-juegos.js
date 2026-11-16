@@ -213,7 +213,7 @@ return m.reply('👑 𝙂𝙐𝘼𝘼 𝙀𝙎𝙏𝘼𝙎 𝙍𝙀 𝘽𝙐𝙀
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
 if (command == 'gay') {
-let vn = 'https://qu.ax/HfeP.mp3'
+let vn = global.gataAudio
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
 conn.sendFile(
 m.chat,
@@ -333,7 +333,7 @@ await conn.reply(m.chat, juego, m, m.mentionedJid ? {mentions: m.mentionedJid} :
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
 if (command == 'topgays') {
-let vn = 'https://qu.ax/HfeP.mp3'
+let vn = global.gataAudio
 let top = `*🌈TOP 10 GAYS/LESBIANAS DEL GRUPO🌈*
     
 *_1.- 🏳️‍🌈 ${user(a)}_* 🏳️‍🌈
@@ -356,7 +356,7 @@ ptt: true
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
 if (command == 'topotakus') {
-let vn = 'https://qu.ax/ZgFZ.mp3'
+let vn = global.gataAudio
 let top = `*🌸 TOP 10 OTAKUS DEL GRUPO 🌸*
     
 *_1.- 💮 ${user(a)}_* 💮

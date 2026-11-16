@@ -13,3 +13,4 @@ database/
 
 # pairing cycle counter
 .pairing-attempts
+tools/*.report.json

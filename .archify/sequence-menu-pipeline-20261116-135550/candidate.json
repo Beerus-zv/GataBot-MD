@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Pipeline de .menu en GataBot-MD",
+    "subtitle": "Del mensaje entrante a la mención correcta",
+    "locale": "es",
+    "quality_profile": "showcase",
+    "output": ".archify/sequence-menu-pipeline-20261116-135550/menu-pipeline.html",
+    "repository": {
+      "url": "https://github.com/GataNina-Li/GataBot-MD",
+      "provider": "github",
+      "revision": "2d9efb9d2710b4c48359dcbd64a73cd8b3869044"
+    }
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Usuario",
+      "sublabel": "escribe .menu",
+      "icon": "person"
+    },
+    {
+      "id": "wa",
+      "type": "messagebus",
+      "label": "WhatsApp",
+      "sublabel": "Baileys rc14"
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "handler.js",
+      "sublabel": "dispatch por mensaje",
+      "sources": [{ "path": "handler.js", "line": 54, "label": "smsg + dispatch" }]
+    },
+    {
+      "id": "lidmap",
+      "type": "security",
+      "label": "LID mapping",
+      "sublabel": "signalRepository",
+      "sources": [{ "path": "lib/simple.js", "line": 2585, "label": "getPNForLID" }]
+    },
+    {
+      "id": "content",
+      "type": "backend",
+      "label": "_content.js",
+      "sublabel": "hook before()",
+      "sources": [{ "path": "plugins/_content.js", "line": 193, "label": "gataImg" }]
+    },
+    {
+      "id": "menu",
+      "type": "backend",
+      "label": "menu-lista.js",
+      "sublabel": "plugin .menu",
+      "sources": [{ "path": "plugins/menu-lista.js", "line": 315, "label": "envío de texto" }]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "global.db",
+      "sublabel": "users, chats",
+      "sources": [{ "path": "plugins/menu-lista.js", "line": 17, "label": "lectura de usuario" }]
+    }
+  ],
+  "segments": [
+    { "from": 152, "to": 300, "label": "Recepción" },
+    { "from": 310, "to": 440, "label": "Contexto" },
+    { "from": 440, "to": 580, "label": "Entrega" }
+  ],
+  "messages": [
+    {
+      "id": "m-command",
+      "from": "user",
+      "to": "wa",
+      "y": 170,
+      "label": ".menu",
+      "variant": "default"
+    },
+    {
+      "id": "m-upsert",
+      "from": "wa",
+      "to": "handler",
+      "y": 200,
+      "label": "messages.upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-resolve",
+      "from": "handler",
+      "to": "lidmap",
+      "y": 234,
+      "label": "resolverSenderPn(m)",
+      "variant": "security",
+      "note": "sender llega como 166842769391723@lid"
+    },
+    {
+      "id": "m-pn",
+      "from": "lidmap",
+      "to": "handler",
+      "y": 289,
+      "label": "m.pn = 573…@s.whatsapp.net",
+      "variant": "return"
+    },
+    {
+      "id": "m-before",
+      "from": "handler",
+      "to": "content",
+      "y": 318,
+      "label": "before() · fotos, fkontak",
+      "variant": "dashed",
+      "note": "si no termina, gataImg queda undefined"
+    },
+    {
+      "id": "m-ready",
+      "from": "content",
+      "to": "handler",
+      "y": 384,
+      "label": "contexto listo",
+      "variant": "return"
+    },
+    {
+      "id": "m-run",
+      "from": "handler",
+      "to": "menu",
+      "y": 420,
+      "label": "ejecuta el plugin .menu",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-read",
+      "from": "menu",
+      "to": "db",
+      "y": 452,
+      "label": "lee users y chats",
+      "variant": "default"
+    },
+    {
+      "id": "m-stats",
+      "from": "db",
+      "to": "menu",
+      "y": 480,
+      "label": "contadores",
+      "variant": "return"
+    },
+    {
+      "id": "m-send",
+      "from": "menu",
+      "to": "wa",
+      "y": 512,
+      "label": "sendMessage texto + mentions",
+      "variant": "emphasis",
+      "note": "un solo tipo de mensaje, sin media"
+    },
+    {
+      "id": "m-deliver",
+      "from": "wa",
+      "to": "user",
+      "y": 550,
+      "label": "menú con @número",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    { "participant": "wa", "from": 186, "to": 566, "type": "messagebus" },
+    { "participant": "handler", "from": 200, "to": 536, "type": "backend" },
+    { "participant": "lidmap", "from": 234, "to": 300, "type": "security" },
+    { "participant": "content", "from": 318, "to": 392, "type": "backend" },
+    { "participant": "menu", "from": 420, "to": 526, "type": "backend" },
+    { "participant": "db", "from": 452, "to": 490, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "El fallo silencioso",
+      "items": [
+        "relayMessage y sendFile resuelven sin error cuando el cliente descarta el mensaje",
+        "La tarjeta interactiva no se pinta en Messenger, pero sí en Business",
+        "El audio apuntaba a qu.ax, que devuelve 404 en las 137 URLs del proyecto"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "La ruta única",
+      "items": [
+        "sendMessage con { text } es el único tipo que todo cliente renderiza",
+        "La imagen sigue existiendo, pero opt-in con --menuimagen",
+        "Si el envío multimedia falla, el texto ya salió: nunca hay silencio"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "La mención",
+      "items": [
+        "proto.WebMessageInfo no trae participantAlt; fromObject lo descarta",
+        "El número solo vive en el LID mapping del socket, y se cachea por proceso",
+        "sin PN resuelto, el saludo usa pushName en vez de imprimir un lid crudo"
+      ]
+    }
+  ]
+}

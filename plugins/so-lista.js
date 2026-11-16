@@ -136,13 +136,14 @@ url: 'https://qu.ax/QSyP.mp3'
 let matchedAudio = audioMap.find((audio) => audio.regex.test(m.text))
 
 if (matchedAudio) {
-try {
-this.sendPresenceUpdate('recording', m.chat)
-this.sendMessage(m.chat, {audio: {url: matchedAudio.url}, fileName: 'error.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
-} catch (e) {
-console.error(e)
-} finally {
-}
+  // await: sin él, un 404 del host de audio deja una promesa rechazada suelta y
+  // el proceso se caía sesenta líneas más abajo, sin relación con el comando.
+  try {
+    await this.sendPresenceUpdate('recording', m.chat)
+    await this.sendMessage(m.chat, {audio: {url: matchedAudio.url}, fileName: 'error.mp3', mimetype: 'audio/mp4', ptt: true}, {quoted: m})
+  } catch (e) {
+    console.error(`[so-lista] audio no entregado (${matchedAudio.url}): ${e?.message ?? e}`)
+  }
 }
 
 return !0

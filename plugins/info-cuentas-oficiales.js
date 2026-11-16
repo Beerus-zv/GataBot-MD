@@ -1,4 +1,4 @@
-let media = 'https://qu.ax/NqZN.mp4'
+let media = global.gataImg
 let handler = async (m, {conn, command}) => {
 let fkontak = {
 key: {participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo'},

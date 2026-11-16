@@ -1,4 +1,4 @@
-let {generateWAMessageFromContent} = (await import(global.baileys)).default
+let {generateWAMessageFromContent} = await import(global.baileys)
 import { performance } from 'perf_hooks'
 import fs from 'fs'
 import moment from 'moment-timezone'
@@ -33,27 +33,9 @@ text: split
 }
 }
 
-let prep = generateWAMessageFromContent(
-m.chat,
-{
-orderMessage: {
-itemCount: -10062007,
-status: 500,
-surface: 999,
-message: teks,
-description: '^^',
-orderTitle: 'Hi Sis',
-token: '9',
-curreyCode: 'IDR',
-totalCurrencyCode: '>〰<',
-totalAmount1000: '1000000',
-sellerJid: md,
-thumbnail: gataImg
-}
-},
-{contextInfo: null, quoted: m}
-)
-conn.relayWAMessage(prep)
+// El orderMessage es un formato retirado: WhatsApp lo descarta, y relayWAMessage
+// ya no existe en Baileys 7. El texto es el mensaje; sendMessage lo entrega.
+await conn.sendMessage(m.chat, {text: teks}, {quoted: m})
 //conn.sendMessage(m.chat, `${teks}`, MessageType.text, rtimebro)
 }
 handler.help = ['runtime']

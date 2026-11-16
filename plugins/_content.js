@@ -162,33 +162,40 @@ global.imagen11 = fs.readFileSync('./media/menus/img10.jpg')
 global.imagen12 = fs.readFileSync('./media/menus/img11.jpg')
 global.imagen13 = fs.readFileSync('./media/menus/img12.jpg')
 
-global.img = 'https://cdn.dorratz.com/files/1738785861212.jpg'
-global.img2 = img //'https://qu.ax/hjcB.jpg'
+// cdn.dorratz.com responde 521 (origen caído) y qu.ax devuelve 404 en todas sus
+// rutas. Varios plugins pasan estas variables como {url: img}, así que tienen
+// que ser una URL real: se apunta al propio repo, que sí sirve el archivo.
+global.img = 'https://raw.githubusercontent.com/Beerus-zv/GataBot-MD/master/media/menus/img1.jpg'
+global.img2 = global.img
 
-global.img3 = img //'https://qu.ax/zELg.jpg'  //prem
-global.img4 = img //'https://qu.ax/YueS.jpg'  //prem
+global.img3 = global.img
+global.img4 = global.img
 
-global.img5 = img //'https://qu.ax/xLcn.jpg'
-global.img6 = img //'https://qu.ax/EGOe.jpg'
-global.img7 = img //'https://qu.ax/wly.jpg'
-global.img8 = img //'https://qu.ax/TPVV.jpg'
-global.img9 = img //'https://qu.ax/qKlN.jpg'
+global.img5 = global.img
+global.img6 = global.img
+global.img7 = global.img
+global.img8 = global.img
+global.img9 = global.img
 
-global.img10 = img //'https://qu.ax/SYFo.jpg'
-global.img11 = img //'https://qu.ax/efhn.jpg'
-global.img12 = img //'https://qu.ax/Vmpl.jpg'
-global.img13 = img //'https://qu.ax/ElSy.jpg'
-global.img14 = img //'https://qu.ax/Tgbe.jpg'
-global.img15 = img //'https://qu.ax/Puwj.jpg'
+global.img10 = global.img
+global.img11 = global.img
+global.img12 = global.img
+global.img13 = global.img
+global.img14 = global.img
+global.img15 = global.img
 
-global.img16 = img //'https://qu.ax/ovkN.jpg'  //+18
+global.img16 = global.img
 
-global.img17 = img //'https://qu.ax/HJdr.jpg'
-global.img18 = img //'https://qu.ax/HCt.jpg'
+global.img17 = global.img
+global.img18 = global.img
 
-global.logogit = img //'https://qu.ax/RzKF.jpg'
+global.logogit = global.img
 
-global.gataVidMenu = ['https://qu.ax/SeFS.mp4', 'https://qu.ax/NqZN.mp4'][Math.floor(Math.random() * 2)]
+global.gataVidMenu = global.imagen1
+
+// Único audio local del repo: los .mp3 de qu.ax que usaban varios plugins ya no
+// existen, y sendFile con una URL muerta tumba el resto del comando.
+global.gataAudio = fs.readFileSync('./media/a.mp3')
 global.gataMenu = [img, img2, img6, img7, img8, img9, img13, img14, img15, img17, img18][Math.floor(Math.random() * 11)]
 global.gataImg = [imagen1, imagen2, imagen3, imagen4, imagen5, imagen6, imagen7, imagen8, imagen9, imagen10, imagen11, imagen12, imagen13][
 Math.floor(Math.random() * 13)

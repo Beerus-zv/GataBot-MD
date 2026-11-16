@@ -1,6 +1,6 @@
 import uploadImage from '../lib/uploadImage.js'
 import { sticker } from '../lib/sticker.js'
-let MessageType = (await import(global.baileys)).default
+let MessageType = await import(global.baileys)
 const effects = ['jail', 'gay', 'glass', 'wasted', 'triggered', 'lolice', 'simpcard', 'horny']
 
 let handler = async (m, {conn, usedPrefix, command, text}) => {

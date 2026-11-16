@@ -122,7 +122,7 @@ handler.command = /^(owner|creator|propietario|dueño|dueña|propietaria|dueño|
 
 export default handler
 
-/*let MessageType =  (await import(global.baileys)).default
+/*let MessageType =  await import(global.baileys)
 let handler  = async (m, { conn, command, args, usedPrefix, DevMode }) => {
   let chat = global.db.data.chats[m.chat]
 let user = global.db.data.users[m.sender]

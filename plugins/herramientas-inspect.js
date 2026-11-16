@@ -358,7 +358,7 @@ return caption.trim()
 }
 
 /*//import * as baileys from '@adiwajshing/baileys'
-let baileys = (await import(global.baileys)).default
+let baileys = await import(global.baileys)
 
 let handler = async (m, { conn, text }) => {
 	let [, code] = text.match(/chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i) || []

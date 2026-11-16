@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\candidate.json",
+    "sha256": "dc1b1aef29b8c586fa096bed807d4d8b1a51f9f1883398d00d1e80376f0d6297",
+    "bytes": 5490
+  },
+  "artifact": {
+    "path": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\menu-pipeline.html",
+    "sha256": "8b97c4faed519f7d0cdc032632013706afeb3a50815c36a1d2faceb5ffaf2398",
+    "bytes": 846151
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\menu-pipeline.finalize.json",
+    "summaryReceipt": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\menu-pipeline.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\menu-pipeline.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-16T18:56:06.011Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5606,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

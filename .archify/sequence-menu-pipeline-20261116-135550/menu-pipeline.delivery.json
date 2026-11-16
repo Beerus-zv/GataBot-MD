@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "333f80e2-d9b7-4031-9c35-b1a681d13f08",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\candidate.json",
+  "output": "C:\\Users\\mateo\\OneDrive\\Documentos\\OpenCode\\GataBot-MD\\.archify\\sequence-menu-pipeline-20261116-135550\\menu-pipeline.html",
+  "specification": {
+    "sha256": "dc1b1aef29b8c586fa096bed807d4d8b1a51f9f1883398d00d1e80376f0d6297",
+    "bytes": 5490
+  },
+  "artifact": {
+    "sha256": "8b97c4faed519f7d0cdc032632013706afeb3a50815c36a1d2faceb5ffaf2398",
+    "bytes": 846151
+  }
+}

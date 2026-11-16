@@ -21,7 +21,7 @@ let name = conn.getName(m.sender)
 if (chat.isBanned) return
 if (m.fromMe) return
 
-let vn = 'https://qu.ax/Ocxm.mp3'
+let vn = global.gataAudio
 let bot =
 `${pickRandom(["*¡𝑬𝒚! 𝑨𝒒𝒖í 𝒆𝒔𝒕𝒐𝒚. 𝒀𝒐 𝒑𝒖𝒆𝒅𝒐 𝒂𝒚𝒖𝒅𝒂𝒓 👉👈 𝑯𝒆𝒚! 𝑰'𝒎 𝒉𝒆𝒓𝒆. 𝑰 𝒄𝒂𝒏 𝒉𝒆𝒍𝒑 🙌*", 'Aqui estoy | Here I am 😼', '*Hola Aqui estoy yo puedo ayudar? | Hello, here I am, can I help? 😸*'])}`.trim()
 let txt = `*¿Tu Nokia es muy lento y necesitas que tu bot esté activo 24/7?* 📱⏳

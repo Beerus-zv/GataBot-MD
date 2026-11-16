@@ -1,6 +1,6 @@
 import uploadImage from '../lib/uploadImage.js'
 import { sticker } from '../lib/sticker.js'
-let MessageType = (await import(global.baileys)).default
+let MessageType = await import(global.baileys)
 const effects = ['greyscale', 'invert', 'brightness', 'threshold', 'sepia', 'red', 'green', 'blue', 'blurple', 'pixelate', 'blur']
 
 let handler = async (m, {conn, usedPrefix, command, text}) => {

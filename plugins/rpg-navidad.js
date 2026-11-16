@@ -52,14 +52,8 @@ texto += `*+${recompensas[reward]}* ${global.rpgshop.emoticon(reward)}\n`
 let text = `☃️🎁 *REGALO NAVIDEÑO* 🎁🎄\n> ${premium ? '🎟️ Recompensa Premium' : '🆓 Recompensa Gratis'}\n\n_${messagesNav}_\n`
 
 // Imágenes de GataBot especial mes de navidad
-let img = [
-'https://qu.ax/AAXbK.jpg',
-'https://qu.ax/KQCkB.jpeg',
-'https://qu.ax/Ubiaj.jpeg',
-'https://qu.ax/QDqWy.jpeg',
-'https://qu.ax/PXewx.jpeg',
-'https://qu.ax/xxJLu.jpeg'
-].getRandom()
+// Las seis de qu.ax daban 404: el host ya no existe. Se usan las locales.
+let img = [global.imagen1, global.imagen2, global.imagen3, global.imagen4, global.imagen5, global.imagen6].getRandom()
 
 await conn.sendFile(m.chat, img, 'navidad.jpg', `${text}\n${texto}`, m, null, fake)
 user.lastclaim = new Date() * 1

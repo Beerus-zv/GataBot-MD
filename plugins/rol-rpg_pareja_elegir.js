@@ -1,5 +1,5 @@
 //import { areJidsSameUser } from '@adiwajshing/baileys'
-let {areJidsSameUser} = (await import(global.baileys)).default
+let {areJidsSameUser} = await import(global.baileys)
 let toM = (a) => '@' + a.split('@')[0]
 let handler = async (m, {conn, usedPrefix, command, text, participants, groupMetadata}) => {
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender

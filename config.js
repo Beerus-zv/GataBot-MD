@@ -8,6 +8,8 @@ import axios from 'axios'
 import moment from 'moment-timezone'
 import { en as enDefault, es as esDefault } from './lib/multi-language/_default.js'
 import { ar, en, es, id, pt } from './lib/idiomas/total-idiomas.js'
+// Antes que cualquier plugin: 40 de ellos usan Array#getRandom / String#getRandom.
+import './lib/compat.js'
 
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
 // [ES] > Agrega el número que será Bot y los que serán propietarios.

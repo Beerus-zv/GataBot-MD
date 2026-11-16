@@ -740,6 +740,17 @@ console.log(chalk.bold.redBright(lenguajeGB['smsConexiondescon'](reason, connect
 
 process.on('uncaughtException', console.error)
 
+// Muchos plugins disparan el envío de un medio sin await (so-lista.js manda el
+// audio de respuesta así). Cuando la URL está muerta la promesa rechaza fuera de
+// cualquier try/catch y, desde Node 15, unhandledRejection sin listener termina
+// el proceso: el bot se caía por un audio 404. Se registra y se sigue.
+let rejectionCount = 0
+process.on('unhandledRejection', (reason) => {
+  rejectionCount += 1
+  const detail = reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason)
+  console.error(chalk.yellowBright(`[unhandledRejection ${rejectionCount}] ${detail}`))
+})
+
 let isInit = true
 let handler = await import('./handler.js')
 const safeOff = (ev, fn) => {

@@ -796,7 +796,7 @@ ${margen}
 ✓ _${usedPrefix}añadirxp *@tag cantidad*_
 ✓ _${usedPrefix}añadirgatacoins *@tag cantidad*_
 `.trim()
-await conn.sendFile(m.chat, gataVidMenu, 'gata.mp4', menu, fkontak, false, {
+await conn.sendFile(m.chat, gataVidMenu, 'gata.jpg', menu, fkontak, false, {
 contextInfo: {
 externalAdReply: {
 mediaUrl: null,
