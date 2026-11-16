@@ -4,6 +4,17 @@ import moment from 'moment-timezone'
 import { sticker } from '../lib/sticker.js'
 import { getRandomImageNsfw as nsfw } from 'module-gatadios'
 
+// Fuente de respaldo para las categorías que purrbot y nekobot no cubren.
+// e621 sirve JSON público sin clave; se exige un User-Agent identificable.
+const E621_UA = 'GataBot-MD/1.0 (https://github.com/Beerus-zv/GataBot-MD)'
+const imagenE621 = async (tags) => {
+const res = await fetch(`https://e621.net/posts.json?tags=${encodeURIComponent(tags)}&limit=40`, {headers: {"user-agent": E621_UA, accept: "application/json"}})
+const json = await res.json()
+const lista = (json?.posts ?? []).map((p) => p?.file?.url).filter((u) => u && /\.(jpe?g|png|gif)$/i.test(u))
+if (!lista.length) return global.img
+return lista[Math.floor(Math.random() * lista.length)]
+}
+
 let handler = async (m, {usedPrefix, command, conn}) => {
 let frep = {
 contextInfo: {
@@ -81,8 +92,7 @@ await conn.sendFile(m.chat, nsfw('nsfworgy'), null, contenido, null, null, {view
 }
 if (command == 'pornotetas' || command == 'nsfwboobs') {
 let resError = (await axios.get('https://raw.githubusercontent.com/GataNina-Li/GataBot-MD/master/src/JSON/tetas.json')).data
-let res = await conn.getFile('https://api-fgmods.ddns.net/api/nsfw/boobs?apikey=fg-dylux').data
-if (res == '' || !res || res == null) res = await resError[Math.floor(resError.length * Math.random())]
+let res = resError[Math.floor(resError.length * Math.random())]
 await conn.sendFile(
 m.chat,
 res,
@@ -98,8 +108,7 @@ m
 
 if (command == 'pornobooty' || command == 'nsfwbooty') {
 let resError = (await axios.get('https://raw.githubusercontent.com/GataNina-Li/GataBot-MD/master/src/JSON/booty.json')).data
-let res = await conn.getFile('https://api-fgmods.ddns.net/api/nsfw/ass?apikey=fg-dylux').data
-if (res == '' || !res || res == null) res = await resError[Math.floor(resError.length * Math.random())]
+let res = resError[Math.floor(resError.length * Math.random())]
 await conn.sendFile(
 m.chat,
 res,
@@ -146,13 +155,10 @@ m
 //await conn.sendButton(m.chat, lenguajeGB.smsCont18Porn(), ` *_${lenguajeGB['smsBotonM7']()}_* » ${user.premiumTime > 0 ? '✅' : '❌'}\n` + wm + ` : *${command[0].toUpperCase() + command.substring(1)}*`, enlace, [[lenguajeGB.smsSig(), `${usedPrefix + command}`], [`🥵 ${lenguajeGB.lenguaje() == 'es' ? 'porno furro 2' : 'nsfw furry 2'} 🥵`.toUpperCase(), `${usedPrefix}${lenguajeGB.lenguaje() == 'es' ? 'pornofurro2' : 'nsfwfurry2'}`]], m, frep)}
 
 if (command == 'pornotrapito' || command == 'nsfwtrap') {
-//https://api.lolhuman.xyz/api/random/nsfw/trap?apikey=6fbee8ec83e7b2677026ffae
-let res = await fetch('https://api.waifu.pics/nsfw/trap')
-let json = await res.json()
-let enlace = json.url
+let enlace = await imagenE621('femboy rating:explicit')
 await conn.sendFile(
 m.chat,
-res,
+enlace,
 null,
 `${lenguajeGB['smsCont18Porn']()}\n${lenguajeGB['smsBotonM7']()} » ${user.premiumTime > 0 ? '✅' : '❌'}`,
 null,
@@ -165,8 +171,7 @@ m
 
 if (command == 'pornolesbiana' || command == 'nsfwlesbian') {
 let resError = (await axios.get('https://raw.githubusercontent.com/GataNina-Li/GataBot-MD/master/src/JSON/imagenlesbians.json')).data
-let res = await conn.getFile('https://api-fgmods.ddns.net/api/nsfw/lesbian?apikey=fg-dylux').data
-if (res == '' || !res || res == null) res = await resError[Math.floor(resError.length * Math.random())]
+let res = resError[Math.floor(resError.length * Math.random())]
 await conn.sendFile(
 m.chat,
 res,
@@ -198,8 +203,7 @@ m
 
 if (command == 'pornopene' || command == 'nsfwpenis') {
 let resError = (await axios.get('https://raw.githubusercontent.com/GataNina-Li/GataBot-MD/master/src/JSON/pene.json')).data
-let res = await conn.getFile('https://api-fgmods.ddns.net/api/nsfw/penis?apikey=fg-dylux').data
-if (res == '' || !res || res == null) res = await resError[Math.floor(resError.length * Math.random())]
+let res = resError[Math.floor(resError.length * Math.random())]
 await conn.sendFile(
 m.chat,
 res,
@@ -329,7 +333,7 @@ m
 //await conn.sendButton(m.chat, lenguajeGB.smsCont18Porn(), `*_${lenguajeGB['smsBotonM7']()}_* » ${user.premiumTime > 0 ? '✅' : '❌'}\n` + wm + ` : *${command[0].toUpperCase() + command.substring(1)}*`, link, [[lenguajeGB.smsSig(), `${usedPrefix + command}`], [`🥵 ${lenguajeGB.lenguaje() == 'es' ? 'porno yaoi 2' : 'nsfw yaoi 2'} 🥵`.toUpperCase(), `${usedPrefix}${lenguajeGB.lenguaje() == 'es' ? 'pornoyaoi2' : 'nsfwyaoi2'}`]], m, frep)}}
 
 if (command == 'pornoyaoi2' || command == 'nsfwyaoi2') {
-let res = await fetch('https://purrbot.site/api/img/nsfw/yaoi/gif')
+let res = await fetch('https://api.purrbot.site/v2/img/nsfw/yaoi/gif')
 let json = await res.json()
 let enlace = json.link
 if (enlace.slice(-3) == 'gif') {
@@ -388,7 +392,7 @@ m
 //await conn.sendButton(m.chat, lenguajeGB.smsCont18Porn(), ` *_${lenguajeGB['smsBotonM7']()}_* » ${user.premiumTime > 0 ? '✅' : '❌'}\n` + wm + ` : *${command[0].toUpperCase() + command.substring(1)}*`, enlace, [[lenguajeGB.smsSig(), `${usedPrefix + command}`], [`🥵 ${lenguajeGB.lenguaje() == 'es' ? 'porno yuri 2' : 'nsfw yuri 2'} 🥵`.toUpperCase(), `${usedPrefix}${lenguajeGB.lenguaje() == 'es' ? 'pornoyuri2' : 'nsfwyuri2'}`]], m, frep)}
 
 if (command == 'pornoyuri2' || command == 'nsfwyuri2') {
-let res = await fetch('https://purrbot.site/api/img/nsfw/yuri/gif')
+let res = await fetch('https://api.purrbot.site/v2/img/nsfw/yuri/gif')
 let json = await res.json()
 let link = json.link
 if (link.slice(-3) == 'gif') {

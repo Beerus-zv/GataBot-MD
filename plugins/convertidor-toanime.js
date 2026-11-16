@@ -7,20 +7,15 @@ m.reply(`${lenguajeGB.smsAvisoIIG()}${mid.smsconvert1}`)
 const data = await q.download?.()
 const image = await uploadImage(data)
 try {
-const anime = `https://api.lolhuman.xyz/api/imagetoanime?apikey=${lolkeysapi}&img=${image}`
+// api.lolhuman.xyz rechaza la clave y api.zahwazein.xyz / api.caliph.biz.id
+// no resuelven. pollinations convierte la foto con el parámetro image= y
+// no pide clave; tarda unos 6 s la primera vez y luego sirve caché.
+const estilo = encodeURIComponent('anime style illustration, high quality, detailed shading')
+const anime = `https://image.pollinations.ai/prompt/${estilo}?image=${encodeURIComponent(image)}&model=turbo&nologo=true&width=768&height=768`
 await conn.sendFile(m.chat, anime, 'error.jpg', null, m)
-} catch (i) {
-try {
-const anime2 = `https://api.zahwazein.xyz/photoeditor/jadianime?url=${image}&apikey=${keysxxx}`
-await conn.sendFile(m.chat, anime2, 'error.jpg', null, m)
-} catch (a) {
-try {
-const anime3 = `https://api.caliph.biz.id/api/animeai?img=${image}&apikey=caliphkey`
-await conn.sendFile(m.chat, anime3, 'error.jpg', null, m)
 } catch (e) {
+console.log(`[toanime] ${e?.message ?? e}`)
 throw `${lenguajeGB.smsAvisoFG()}${mid.smsconvert2}`
-}
-}
 }
 }
 handler.help = ['toanime']

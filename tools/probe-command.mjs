@@ -13,8 +13,15 @@ const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
 const toUrl = (p) => pathToFileURL(p).toString()
 
-global.__filename = (p, rmPrefix = true) => (rmPrefix ? p : p)
-global.__dirname = (p) => dirname(p)
+// Mirrors main.js. A stub that returned the file URL unchanged made
+// global.__dirname(import.meta.url) produce "file:\C:\..." and every path built
+// from it fail with ENOENT.
+global.__filename = function filename(pathURL = import.meta.url, rmPrefix = true) {
+  return rmPrefix ? (/file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL) : pathToFileURL(pathURL).toString()
+}
+global.__dirname = function directoryOf(pathURL) {
+  return dirname(global.__filename(pathURL, true))
+}
 global.opts = {}
 
 await import(toUrl(join(root, 'config.js')))
@@ -118,7 +125,12 @@ global.db = {
         // user has after #verificar. Without it, half the plugins answer with the
         // registration card and the code behind it never runs.
         registered: Boolean(process.env.PROBE_REGISTERED),
-        premium: false, premiumTime: 0, spam: 0, antispam: 0, banned: false,
+        // PROBE_PREMIUM=1 hace lo mismo con handler.premium, que bloquea los
+        // comandos 18+ y la mitad de las descargas. El handler mira premiumTime,
+        // no el booleano, así que hay que darle una fecha futura.
+        premium: Boolean(process.env.PROBE_PREMIUM),
+        premiumTime: process.env.PROBE_PREMIUM ? Date.now() + 86400000 : 0,
+        spam: 0, antispam: 0, banned: false,
         warn: 0, afk: -1, mesagge: 0, reporte: 0, joincount: 1, name: 'Probe'
       }
     },
@@ -143,6 +155,18 @@ global.asistencia = 'probe'
 // an endpoint report a failure that only existed inside the probe.
 global.API = (u) => u
 global.getBuffer = async () => Buffer.alloc(0)
+// main.js freezes global.support after probing for ffmpeg/ImageMagick. Sin esto
+// lib/sticker.js revienta en `global.support.ffmpeg` y cualquier comando que
+// fabrique un sticker parece roto aunque en producción funcione.
+global.support = Object.freeze({
+  ffmpeg: false,
+  ffprobe: false,
+  ffmpegWebp: false,
+  convert: false,
+  magick: false,
+  gm: false,
+  find: false
+})
 
 // main.js loads the plugins before importing nothing in particular; the handler
 // expects them in global.plugins. Mirror filesInit() here.

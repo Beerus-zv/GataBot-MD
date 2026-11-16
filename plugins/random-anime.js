@@ -1,6 +1,24 @@
 import axios from 'axios'
 import cheerio from 'cheerio'
 import hispamemes from 'hispamemes'
+
+// api.waifu.pics y api.zahwazein.xyz ya no resuelven, source.unsplash.com
+// responde 503 y api.lolhuman.xyz rechaza la clave. Estas tres fuentes
+// contestan sin clave y devuelven una URL de imagen directa.
+const UA_NEKOS = 'GataBot-MD/1.0 (https://github.com/Beerus-zv/GataBot-MD)'
+const nekosBest = async (tipo) => {
+const res = await fetch(`https://nekos.best/api/v2/${tipo}`, {headers: {"user-agent": UA_NEKOS}})
+const json = await res.json()
+return json?.results?.[0]?.url
+}
+const wallhaven = async (consulta, extra = "") => {
+const q = consulta ? "&q=" + encodeURIComponent(consulta) : ""
+const res = await fetch(`https://wallhaven.cc/api/v1/search?categories=100&purity=100&sorting=random${q}${extra}`)
+const json = await res.json()
+const lista = json?.data ?? []
+return lista.length ? lista[Math.floor(Math.random() * lista.length)].path : global.img
+}
+const retrato = (genero) => `https://randomuser.me/api/portraits/${genero}/${Math.floor(Math.random() * 90)}.jpg`
 const handler = async (m, {command, conn, usedPrefix}) => {
 const apikey = global.keysxxx
 const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
@@ -158,22 +176,15 @@ conn.sendFile(m.chat, neko, 'error.jpg', 'Nyaww~ 🐾💗', m, null, fake)
 }
 
 if (command == 'ppcp' || command == 'ppcouple') {
-const res = await fetch(`https://api.lolhuman.xyz/api/random/ppcouple?apikey=${lolkeysapi}`)
-if (res.status != 200) throw await res.text()
-const json = await res.json()
-if (!json.status) throw json
-conn.sendFile(m.chat, json.result.female, 'error.jpg', '*𝘾𝙃𝙄𝘾𝘼 ✨*', m, null, fake)
+conn.sendFile(m.chat, retrato('women'), 'error.jpg', '*𝘾𝙃𝙄𝘾𝘼 ✨*', m, null, fake)
 //conn.sendButton(m.chat, '𝘾𝙃𝙄𝘾𝘼 ✨', wm, json.result.female, [['𝙎𝙄𝙂𝙐𝙄𝙀𝙉𝙏𝙀 | 𝙉𝙀𝙓𝙏 🆕', `/${command}`]], null, null, m)
-conn.sendFile(m.chat, json.result.male, 'error.jpg', '𝘾𝙃𝙄𝘾𝙊 ✨', m, null, fake)
+conn.sendFile(m.chat, retrato('men'), 'error.jpg', '𝘾𝙃𝙄𝘾𝙊 ✨', m, null, fake)
 //conn.sendButton(m.chat, '𝘾𝙃𝙄𝘾𝙊 ✨', wm, json.result.male, [['𝙎𝙄𝙂𝙐𝙄𝙀𝙉𝙏𝙀 | 𝙉𝙀𝙓𝙏 🆕', `/${command}`]], null, null, m)
 }
 
 if (command == 'waifu') {
-const res = await fetch('https://api.waifu.pics/sfw/waifu')
-if (!res.ok) throw await res.text()
-const json = await res.json()
-if (!json.url) throw 'Error!'
-conn.sendFile(m.chat, json.url, 'error.jpg', '_*💖 A-ara ara sempai 💖*_', m, null, fake)
+const url = (await nekosBest('waifu')) || global.img
+conn.sendFile(m.chat, url, 'error.jpg', '_*💖 A-ara ara sempai 💖*_', m, null, fake)
 //conn.sendButton(m.chat, `*💖 A-ara ara sempai 💖*`, botname, json.url, [['🔄 𝐒𝐈𝐆𝐔𝐈𝐄𝐍𝐓𝐄 🔄', `/${command}`]], null, null, m)
 }
 
@@ -300,49 +311,49 @@ conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 }
 
 if (command == 'randomprofile') {
-const haha = await conn.getFile(`https://api.zahwazein.xyz/randomimage/profil?apikey=${apikey}`)
+const haha = retrato(Math.random() < 0.5 ? 'women' : 'men')
 await conn.reply(m.chat, global.wait, m)
 conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 //conn.sendButton(m.chat, `_${command}_`, botname, haha, [['🔄 𝚂𝙸𝙶𝚄𝙸𝙴𝙽𝚃𝙴 🔄', `/${command}`]], null, null, m)
 }
 
 if (command == 'wpaesthetic2') {
-const haha = await conn.getFile(`https://api.zahwazein.xyz/randomimage/aesthetic?apikey=${apikey}`)
+const haha = await wallhaven('abstract')
 await conn.reply(m.chat, global.wait, m)
 conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 //conn.sendButton(m.chat, `_${command}_`, botname, haha, [['🔄 𝚂𝙸𝙶𝚄𝙸𝙴𝙽𝚃𝙴 🔄', `/${command}`]], null, null, m)
 }
 
 if (command == 'wpvehiculo') {
-const haha = await conn.getFile(`https://api.zahwazein.xyz/randomimage/mobil?apikey=${apikey}`)
+const haha = await wallhaven('car')
 await conn.reply(m.chat, global.wait, m)
 conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 // conn.sendButton(m.chat, `_${command}_`, botname, haha, [['🔄 𝚂𝙸𝙶𝚄𝙸𝙴𝙽𝚃𝙴 🔄', `/${command}`]], null, null, m)
 }
 
 if (command == 'wallhp') {
-const haha = await conn.getFile(`https://api.zahwazein.xyz/randomimage/wallhp?apikey=${apikey}`)
+const haha = await wallhaven('', '&ratios=9x16')
 await conn.reply(m.chat, global.wait, m)
 conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 //conn.sendButton(m.chat, `_${command}_`, botname, haha, [['🔄 𝚂𝙸𝙶𝚄𝙸𝙴𝙽𝚃𝙴 🔄', `/${command}`]], null, null, m)
 }
 
 if (command == 'wpmoto') {
-const haha = await conn.getFile(`https://api.zahwazein.xyz/randomimage/motor?apikey=${apikey}`)
+const haha = await wallhaven('motorcycle')
 await conn.reply(m.chat, global.wait, m)
 conn.sendFile(m.chat, haha, 'error.jpg', `_${command}_`, m, null, fake)
 //conn.sendButton(m.chat, `_${command}_`, botname, haha, [['🔄 𝚂𝙸𝙶𝚄𝙸𝙴𝙽𝚃𝙴 🔄', `/${command}`]], null, null, m)
 }
 
 if (command == 'chica') {
-let pp = 'https://source.unsplash.com/featured/?girl,woman'
-conn.sendFile(m.chat, pp, 'error.jpg', m, null, fake)
+let pp = retrato('women')
+conn.sendFile(m.chat, pp, 'error.jpg', null, m, null, fake)
 //conn.sendButton(m.chat, wm, null, pp, [['😻 𝙎𝙄𝙂𝙐𝙄𝙀𝙉𝙏𝙀 | 𝙉𝙀𝙓𝙏', `.chica`],['✨ 𝘾𝙃𝙄𝘾𝙊 | 𝘽𝙊𝙔', `.chico`],['𝙑𝙤𝙡𝙫𝙚𝙧 𝙖𝙡 𝙈𝙚𝙣𝙪́ | 𝘽𝙖𝙘𝙠 𝙩𝙤 𝙈𝙚𝙣𝙪 ☘️', '/menu']], null, null, m)
 }
 
 if (command == 'chico') {
-let pp = 'https://source.unsplash.com/featured/?boy,man'
-conn.sendFile(m.chat, pp, 'error.jpg', m, null, fake)
+let pp = retrato('men')
+conn.sendFile(m.chat, pp, 'error.jpg', null, m, null, fake)
 //conn.sendButton(m.chat, wm, null, pp, [['😻 𝙎𝙄𝙂𝙐𝙄𝙀𝙉𝙏𝙀 | 𝙉𝙀𝙓𝙏', `.chico`],['✨ 𝘾𝙃𝙄𝘾𝘼 | 𝙂𝙄𝙍𝙇', `.chica`],['𝙑𝙤𝙡𝙫𝙚𝙧 𝙖𝙡 𝙈𝙚𝙣𝙪́ | 𝘽𝙖𝙘𝙠 𝙩𝙤 𝙈𝙚𝙣𝙪 ☘️', '/menu']], null, null, m)
 }
 

@@ -1,36 +1,24 @@
-import fetch from 'node-fetch'
-import { sticker } from '../lib/sticker.js'
-let handler = async (m, {conn, text, usedPrefix, command}) => {
-if (!text) throw `${lenguajeGB['smsAvisoMG']()}${mid.smsMalused8}\n${usedPrefix + command} https://getstickerpack.com/stickers/flork-memes-4-1`
-try {
-let url = text
-let res = await fetch(`https://api.akuari.my.id/downloader/stickerpack?link=${url}`)
-let json = await res.json()
-for (let data of json.result || json) {
-const stikers = await sticker(false, data, global.packname, global.author)
-conn.sendFile(m.chat, stikers, null, {asSticker: true}, m, true, {contextInfo: {forwardingScore: 200, isForwarded: true}}, {quoted: m})
-await delay(5000)
-}
-} catch (e) {
-await m.reply(
-lenguajeGB['smsMalError3']() +
-'\n*' +
-lenguajeGB.smsMensError1() +
-'*\n*' +
-usedPrefix +
-`${lenguajeGB.lenguaje() == 'es' ? 'reporte' : 'report'}` +
-'* ' +
-`${lenguajeGB.smsMensError2()} ` +
-usedPrefix +
-command
+/**
+ * .stickerpack descargaba paquetes con api.akuari.my.id, que responde 503, y
+ * con getstickerpack.com, que está detrás de Cloudflare y devuelve 403 a
+ * cualquier petición que no venga de un navegador. No queda servicio público
+ * sin clave que convierta un paquete en una lista de imágenes, así que el
+ * comando responde con la vía que sí funciona en vez de morir en un fetch
+ * muerto.
+ */
+let handler = async (m, {usedPrefix, text, command}) => {
+if (!text)
+throw `${lenguajeGB['smsAvisoMG']()}${mid.smsMalused8}\n${usedPrefix + command} https://getstickerpack.com/stickers/flork-memes-4-1`
+const telegram = /^https?:\/\/t\.me\/addstickers\//i.test(text)
+return m.reply(
+[
+`${lenguajeGB['smsAvisoFG']()}EL SERVICIO DE PAQUETES DE STICKERS YA NO EXISTE.`,
+telegram ? 'LOS PAQUETES DE TELEGRAM NECESITAN UN TOKEN DE BOT, QUE ESTE COMANDO NO TIENE.' : 'getstickerpack.com ESTÁ DETRÁS DE CLOUDFLARE Y api.akuari.my.id RESPONDE 503.',
+`ALTERNATIVA QUE SÍ FUNCIONA: RESPONDE A UNA IMAGEN CON *${usedPrefix}s* Y SE CONVIERTE EN STICKER.`
+].join('\n')
 )
-console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-console.log(e)
-handler.limit = false
-}
 }
 handler.command = /^stickerpack$/i
 handler.limit = 1
 handler.register = true
 export default handler
-const delay = (time) => new Promise((res) => setTimeout(res, time))

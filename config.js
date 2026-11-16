@@ -82,7 +82,11 @@ dorratz: {url: 'https://api.dorratz.com', key: null},
 siputzx: {url: 'https://api.siputzx.my.id/api', key: null},
 vreden: {url: 'https://api.vreden.web.id/api', key: null},
 fgmods: {url: 'https://api.fgmods.xyz/api', key: 'elrebelde21'},
-popcat: {url: 'https://api.popcat.xyz', key: null}
+popcat: {url: 'https://api.popcat.xyz', key: null},
+// APIs públicas sin clave. Faltaban por completo y comandos+18-adult2.js las
+// usa en 34 ramas: la URL salía como "undefinedimage?type=..." y el fetch moría.
+nekobot: {url: 'https://nekobot.xyz/api/', key: null},
+purrbot: {url: 'https://api.purrbot.site/v2/', key: null}
 }
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
 
