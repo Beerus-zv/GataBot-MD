@@ -67,9 +67,11 @@ termux-setup-storage
 pkg update && pkg upgrade
 pkg install -y git nodejs ffmpeg imagemagick
 git clone https://github.com/Beerus-zv/GataBot-MD && cd GataBot-MD
-npm install
+npm install --omit=dev --ignore-scripts
 npm start
 ```
+
+`--ignore-scripts` no es opcional en Termux: `sharp` (dependencia de `wa-sticker-formatter`) intenta descargar un binario de libvips para `android-arm64` que no existe, y aborta la instalación entera con `npm error code 1`. Sin el flag no queda nada instalado y el bot muere en el primer `import`. Los stickers no se pierden: `lib/sticker.js` usa ffmpeg primero y sólo cae en `wa-sticker-formatter` si ffmpeg falla.
 
 Instalador automático (clona esta bifurcación, no el original):
 
